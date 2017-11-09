@@ -1,11 +1,15 @@
 package com.anantya.watchsensor.data;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v4.content.ContextCompat;
+import android.telephony.TelephonyManager;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -130,10 +134,14 @@ public class ConfigData implements Parcelable {
     }
 
     protected String getDefaultWatchId(Context context) {
+
+        TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+
         String result = DEFAULT_WATCH_ID;
-        WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        result = result + "-" + wifiInfo.getMacAddress();
+
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED && telephonyManager != null) {
+            result = result + "-" + telephonyManager.getDeviceId();
+        }
         return result;
     }
 
