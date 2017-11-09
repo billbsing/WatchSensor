@@ -117,8 +117,11 @@ public class StatusFragment extends Fragment {
 
         mTextViewPercentDone.setVisibility(value ? View.VISIBLE : View.GONE);
         mProgressBar.setVisibility(value ? View.VISIBLE : View.GONE);
-        getView().findViewById(R.id.tableRowRetry).setVisibility(value ? View.VISIBLE : View.GONE);
-        getView().findViewById(R.id.tableRowUpload).setVisibility(value ? View.VISIBLE : View.GONE);
+        View view = getView();
+        if ( view != null ) {
+            view.findViewById(R.id.tableRowRetry).setVisibility(value ? View.VISIBLE : View.GONE);
+            view.findViewById(R.id.tableRowUpload).setVisibility(value ? View.VISIBLE : View.GONE);
+        }
 
         if ( value ) {
             mTextViewUploadWaitTitle.setText(R.string.status_fragment_waiting);
