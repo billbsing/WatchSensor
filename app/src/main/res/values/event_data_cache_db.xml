@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="event_data_cache_db_create">"
+        CREATE TABLE event_data (
+            _id INTEGER PRIMARY KEY,
+            sensor_id INTEGER,
+            name TEXT,
+            create_time LONG,
+            timestamp LONG,
+            value_count INTEGER,
+            value_0 FLOAT,
+            value_1 FLOAT,
+            value_2 FLOAT,
+            value_3 FLOAT,
+            upload_time LONG,
+            upload_timeout_time LONG
+        );
+
+        CREATE INDEX event_data_id_index ON event_data(_id);
+        CREATE INDEX event_data_upload_time_idx ON event_data(upload_time);
+        CREATE INDEX event_data_upload_timeout_idx ON event_data(upload_timeout_time);
+        CREATE INDEX event_data_timestamp_idx ON event_data(timestamp);
+
+       CREATE TABLE cache_state (
+            _id INTEGER PRIMARY KEY,
+            name TEXT,
+            update_time LONG
+        );
+
+        CREATE TABLE event_data_stat (
+            _id INTEGER PRIMARY KEY,
+            name TEXT,
+            value LONG
+        );
+    "</string>
+
+    <string name="event_data_cache_db_delete">"
+        DELETE TABLE event_data;
+        DELETE TABLE cache_state;
+        DELETE TABLE event_data_stat;
+        DELETE INDEX event_data_id_index;
+        DELETE INDEX event_data_upload_time_idx;
+        DELETE INDEX event_data_upload_timeout_idx;
+        DELETE INDEX event_data_timestamp_idx;
+    "</string>
+</resources>
