@@ -21,6 +21,7 @@ import android.util.Log;
 
 import com.anantya.watchsensor.HomeActivity;
 import com.anantya.watchsensor.R;
+import com.anantya.watchsensor.data.ConfigData;
 import com.anantya.watchsensor.data.EventDataList;
 import com.anantya.watchsensor.jobs.MaintenanceJob;
 import com.anantya.watchsensor.jobs.UploadDataJob;
@@ -60,10 +61,16 @@ public class WatchSensorService extends Service {
 
                 mSensorReader = new SensorReader(getBaseContext(), this);
                 mSensorReader.start();
+                UploadService.setActive(WatchSensorService.this, false);
 
                 while (true) {
                     Thread.sleep(THREAD_SLEEP_TIME);
                     mSensorReader.setActive(! BatteryHelper.isPowered(getApplicationContext()));
+                    if ( UploadService.isActive(WatchSensorService.this)) {
+                        ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
+                        // request an upload
+                        UploadService.requestUpload(WatchSensorService.this, configData);
+                    }
                 }
             } catch ( InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -88,6 +95,7 @@ public class WatchSensorService extends Service {
                 text = "Sensor reader on";
                 mSensorReader.start();
                 UploadDataJob.cancel(getApplicationContext());
+                UploadService.setActive(WatchSensorService.this, false);
             }
             else {
                 mSensorReader.stop();

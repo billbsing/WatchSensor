@@ -14,6 +14,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.icu.util.TimeUnit;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
@@ -22,6 +23,7 @@ import android.widget.Toast;
 
 import com.anantya.watchsensor.R;
 import com.anantya.watchsensor.data.ConfigData;
+import com.anantya.watchsensor.data.EventDataList;
 import com.anantya.watchsensor.data.EventDataStatItem;
 import com.anantya.watchsensor.db.EventDataCacheHelper;
 import com.anantya.watchsensor.db.EventDataStatModel;
@@ -40,18 +42,23 @@ import java.util.Locale;
 public class UploadDataJob extends JobService {
 
     public static final int JOB_ID = 101;
-    public static final long JOB_FREQUENCY_FAST = DateUtils.SECOND_IN_MILLIS * 60;          // every 1 minute, if more data to process
+    public static final long JOB_FREQUENCY_FAST = DateUtils.MINUTE_IN_MILLIS;          // every 1 minute, if more data to process
     public static final long JOB_FREQUENCY_MEDIUM = DateUtils.MINUTE_IN_MILLIS * 5;         // every 5 minutes, if too much data to process
     public static final long JOB_FREQUENCY_SLOW = DateUtils.MINUTE_IN_MILLIS * 30;          // every 30 minutes check for uploads, when no more records found, or
     public static final float MIN_BATTERY_PERCENT = 20;                                     // minimum battery level with power to start uploading
-    private static final long THREAD_TIMEOUT = DateUtils.SECOND_IN_MILLIS * 30;             // for safety, if no broadcasts occur after this then exit the thread
-    private static final long JOB_OVERRIDE_OFFSET = DateUtils.SECOND_IN_MILLIS * 10;
+
+    private static final long THREAD_TIMEOUT = DateUtils.MINUTE_IN_MILLIS * 2;             // for safety, if no broadcasts occur after this then exit the thread
+    private static final long JOB_OVERRIDE_OFFSET = DateUtils.SECOND_IN_MILLIS * 20;
+    private static final int MAX_EMPTY_REQUEST_COUNT_BEFORE_PURGE = 120;                    // number of empty requests made to the upload service before forcing a purge
     private static final String TAG = "UploadDataJob";
+
+    private static final String WAKE_LOCK_NAME = "WatchSensor.wake_lock";
 
 
     public static void start(Context context) {
         start(context, JOB_FREQUENCY_FAST);
     }
+
     public static void start(Context context, long jobFrequency) {
         JobInfo jobInfo = new JobInfo.Builder(JOB_ID, new ComponentName(context, UploadDataJob.class))
                 .setMinimumLatency(jobFrequency)
@@ -78,6 +85,7 @@ public class UploadDataJob extends JobService {
         String reasonForNotUploading = reasonForNotUploading();
         boolean isThreadRunning = false;
 
+
         if ( reasonForNotUploading.isEmpty() ) {
 
             // wait for the waiting record count in a seperate thread,
@@ -100,24 +108,42 @@ public class UploadDataJob extends JobService {
                                 EventDataStatItem eventDataStatItem = intent.getParcelableExtra(EventDataCacheService.PARAM_EVENT_DATA_STATS_ITEM);
                                 Log.d(TAG, eventDataStatItem.toString());
                                 long queueSize = eventDataStatItem.getUploadProcessing() + eventDataStatItem.getUploadWait();
+                                // if data is corrupted start a rebuild/purge
+                                if ( eventDataStatItem.getUploadProcessing() < 0 || eventDataStatItem.getUploadWait() < 0) {
+                                    queueSize = 0;
+                                }
+                                int uploadEmptyRequestCount = UploadService.getEmptyRequestCount(UploadDataJob.this);
                                 long jobFrequency = JOB_FREQUENCY_FAST;
-                                if ( queueSize == 0) {
+                                UploadService.setActive(UploadDataJob.this, queueSize > 0);
+                                if ( queueSize == 0 ) {
                                     jobFrequency = JOB_FREQUENCY_SLOW;
                                     if ( eventDataStatItem.getUploadDone() > 0) {
                                         // now request a safe data purge
                                         Log.d(TAG, "requesting purge");
                                         EventDataCacheService.requestEventDataPurge(UploadDataJob.this, true);
+                                        activateWakeLock(jobFrequency);
                                     }
+
                                 } else {
+                                    if ( uploadEmptyRequestCount > MAX_EMPTY_REQUEST_COUNT_BEFORE_PURGE) {
+                                        // turn off upload service
+                                        UploadService.setActive(UploadDataJob.this, false);
+                                        UploadService.setEmptyRequestCount(UploadDataJob.this, 0);
+                                        // request a rebuild
+                                        Log.d(TAG, "requesting rebuild");
+                                        EventDataCacheService.requestEventDataRebuildStats(UploadDataJob.this);
+
+                                    }
                                     // if we have records to process then start the upload service
                                     // get the latest config data
-                                    ConfigData configData = ConfigData.createFromPreference(UploadDataJob.this);
+//                                    ConfigData configData = ConfigData.createFromPreference(UploadDataJob.this);
                                     // request an upload
-                                    UploadService.requestUpload(UploadDataJob.this, configData);
-
+//                                    UploadService.requestUpload(UploadDataJob.this, configData);
+//                                    activateWakeLock(jobFrequency);
                                 }
                                 UploadDataJob.start(UploadDataJob.this, jobFrequency);
                                 mIsWorking = false;
+                                Log.d(TAG, "Job finished");
                                 jobFinished(params, false);
                             }
                         }
@@ -135,6 +161,7 @@ public class UploadDataJob extends JobService {
                             e.printStackTrace();
                         }
                     }
+                    Log.d(TAG, "Job exit");
                     broadcastManager.unregisterReceiver(mBroadcastOnEventDataCacheActionDone);
                 }
             });
@@ -142,6 +169,8 @@ public class UploadDataJob extends JobService {
 
         }
         else {
+            UploadService.setActive(UploadDataJob.this, false);
+
             Log.d(TAG, "Not ready for upload because " + reasonForNotUploading());
             if ( isAutoTurnOnWifi() ) {
                 UploadDataJob.start(this, JOB_FREQUENCY_FAST);
@@ -194,5 +223,12 @@ public class UploadDataJob extends JobService {
         }
         return result;
     }
+
+    protected void activateWakeLock(long timeout) {
+        PowerManager powerManager = (PowerManager ) getSystemService(POWER_SERVICE);
+        PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_NAME);
+        wakeLock.acquire(timeout);
+    }
+
 
 }

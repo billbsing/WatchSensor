@@ -1,5 +1,6 @@
 package com.anantya.watchsensor.cache;
 
+import android.text.format.DateUtils;
 import android.util.Log;
 
 import com.anantya.watchsensor.data.EventDataItem;
@@ -67,7 +68,10 @@ public class EventDataCache {
 //                scanCount ++;
                 if ( timeData[CacheData.INDEX_HEADER_UPLOAD_TIME] == 0) {
                     if ( isFirstSendFound ) {
-//                        Log.d(TAG, "Scan count = " + String.valueOf(scanCount));
+//                        float secondsLeft = (timeData[CacheData.INDEX_HEADER_UPLOAD_TIMEOUT_TIME] - maxTimeoutTime) / DateUtils.SECOND_IN_MILLIS;
+
+//                        Log.d(TAG, "Scan count = " + String.valueOf(scanCount) + " seconds left " + String.valueOf(secondsLeft));
+
                         header.setStartSendId(id);
                         file.writeHeader(header);
                         isFirstSendFound = false;

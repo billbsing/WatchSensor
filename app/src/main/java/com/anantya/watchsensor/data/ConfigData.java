@@ -124,6 +124,7 @@ public class ConfigData implements Parcelable {
         return result;
     }
 
+
     public void assignDefaults(Context context) {
         setWatchId(getDefaultWatchId(context));
         setKeyname(DEFAULT_KEY_NAME);
@@ -152,6 +153,7 @@ public class ConfigData implements Parcelable {
         mURL = sharedPreferences.getString(PREFERENCE_URL, "");
         mMessageQueueName = sharedPreferences.getString(PREFERENCE_MESSAGE_QUEUE_NAME, "");
         mKeyname = sharedPreferences.getString(PREFERENCE_KEY_NAME, "");
+
     }
 
     public void wirteToPreference(SharedPreferences sharedPreferences) {

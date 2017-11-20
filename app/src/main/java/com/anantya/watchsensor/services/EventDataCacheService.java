@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.anantya.watchsensor.cache.EventDataCache;
 import com.anantya.watchsensor.data.EventDataItem;
@@ -37,7 +38,7 @@ public class EventDataCacheService extends IntentService {
     public static final String PARAM_EVENT_DATA_STATS_ITEM = "EventDataCacheService.event_data_stats_item";
     public static final String PARAM_IS_SAFE_PURGE = "EventDataCacheService.is_safe_purge";
 
-
+    private static final String TAG = "EventDataCacheService";
 
     private SQLiteDatabase mDB;
     private EventDataStatItem mEventDataStatItem;
@@ -166,7 +167,10 @@ public class EventDataCacheService extends IntentService {
 
     protected EventDataList getCacheEventData(int maxRecordCount, long retryTimeoutTime) {
 
-        return mEventDataCache.getDataForUpload(maxRecordCount, retryTimeoutTime);
+//        Log.d(TAG, "Start getting event data " + String.valueOf(maxRecordCount));
+        EventDataList eventDataList = mEventDataCache.getDataForUpload(maxRecordCount, retryTimeoutTime);
+//        Log.d(TAG, "Finished getting event data " + String.valueOf(eventDataList.getItems().size()));
+        return eventDataList;
     }
 
     protected void updateUploadIdList(long[] idList) {
