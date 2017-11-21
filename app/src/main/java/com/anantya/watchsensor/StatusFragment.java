@@ -69,7 +69,7 @@ public class StatusFragment extends Fragment {
         // hide the total line
         view.findViewById(R.id.tableRowTotal).setVisibility(View.GONE);
         // hide the information line
-        view.findViewById(R.id.textViewInformation).setVisibility(View.GONE);
+        view.findViewById(R.id.tableRowInformation).setVisibility(View.GONE);
 
         return view;
     }
