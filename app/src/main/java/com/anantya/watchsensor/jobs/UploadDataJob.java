@@ -49,7 +49,7 @@ public class UploadDataJob extends JobService {
 
     private static final long THREAD_TIMEOUT = DateUtils.MINUTE_IN_MILLIS * 2;             // for safety, if no broadcasts occur after this then exit the thread
     private static final long JOB_OVERRIDE_OFFSET = DateUtils.SECOND_IN_MILLIS * 20;
-    private static final int MAX_EMPTY_REQUEST_COUNT_BEFORE_PURGE = 120;                    // number of empty requests made to the upload service before forcing a purge
+    private static final int MIN_EMPTY_REQUEST_COUNT_BEFORE_PURGE = 20;                    // number of empty requests made to the upload service before forcing a purge
     private static final String TAG = "UploadDataJob";
 
     private static final String WAKE_LOCK_NAME = "WatchSensor.wake_lock";
@@ -125,7 +125,7 @@ public class UploadDataJob extends JobService {
                                     }
 
                                 } else {
-                                    if ( uploadEmptyRequestCount > MAX_EMPTY_REQUEST_COUNT_BEFORE_PURGE) {
+                                    if ( uploadEmptyRequestCount > MIN_EMPTY_REQUEST_COUNT_BEFORE_PURGE) {
                                         // turn off upload service
                                         UploadService.setActive(UploadDataJob.this, false);
                                         UploadService.setEmptyRequestCount(UploadDataJob.this, 0);

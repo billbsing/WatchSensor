@@ -157,11 +157,14 @@ public class UploadService extends IntentService {
                     int emptyRequestCount = getEmptyRequestCount(UploadService.this);
 
                     mRequestedUploadCount = eventDataList.getItems().size();
-                    if ( mRequestCount > 0) {
+                    if ( mRequestedUploadCount > 0) {
                         setEmptyRequestCount(UploadService.this, 0);
+//                        Log.d(TAG, "reset empty request counter ");
                     }
                     else {
-                        setEmptyRequestCount(UploadService.this, emptyRequestCount + 1);
+                        emptyRequestCount += 1;
+                        setEmptyRequestCount(UploadService.this, emptyRequestCount);
+//                        Log.d(TAG, "increment empty request counter " + emptyRequestCount);
                     }
                     while ( eventDataList.getItems().size() > 0 ) {
                         EventDataList uploadList = eventDataList.extractList(UPLOAD_BLOCK_COUNT);

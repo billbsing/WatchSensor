@@ -61,16 +61,24 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
             Sensor.TYPE_STEP_DETECTOR
     };
 
+    private static final Frizz.Type[] FRIZZ_SENSOR_LOAD_TYPES = {
+            Frizz.Type.SENSOR_TYPE_BLOOD_PRESSURE,
+    };
+
+    private static final int FRIZZ_DEFAULT_BLOOD_PRESURE_MIN = 70;
+    private static final int FRIZZ_DEFAULT_BLOOD_PRESURE_MAX = 130;
+
     private static final int MAX_CACHE_SIZE = 100000;                                 // when the record count > then call a cache timeout
     private static final long CACHE_TIMOUT = DateUtils.SECOND_IN_MILLIS * 10;         // every ten seconds call a cache timeout
 
     public SensorReader(Context context, SensorReaderListener listener) {
         mListener = listener;
         mSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
+        mFrizzManager = FrizzManager.getFrizzService(context);
+
         mEventDataList = new EventDataList();
         loadSensorList();
         mIsActive = true;
-        mFrizzManager = FrizzManager.getFrizzService(context);
     }
 
     protected void loadSensorList() {
@@ -83,7 +91,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
                 mSensorList.add(sensor);
             }
         }
-//        mFrizzManager.HRBloodParameter(130, 70);
+        mFrizzManager.HRBloodParameter(FRIZZ_DEFAULT_BLOOD_PRESURE_MAX, FRIZZ_DEFAULT_BLOOD_PRESURE_MIN);
     }
 
     public List<Sensor> getSensorList() { return mSensorList; }
@@ -93,12 +101,16 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         for ( int i = 0; i < mSensorList.size(); i ++) {
             mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
         }
-        mFrizzManager.registerListener(this, Frizz.Type.SENSOR_TYPE_BLOOD_PRESSURE);
+        for ( int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i ++) {
+            mFrizzManager.registerListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
+        }
     }
 
     public void stop() {
         mSensorManager.unregisterListener(this);
-        mFrizzManager.unregisterListener(this, Frizz.Type.SENSOR_TYPE_BLOOD_PRESSURE);
+        for ( int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i ++) {
+            mFrizzManager.unregisterListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
+        }
     }
 
     public boolean isActive() {
@@ -114,7 +126,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mIsActive = value;
     }
 
-    protected void processCacheFullTimeout() {
+    protected void processCacheFinished() {
         if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {
             mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
             if ( mEventDataList.getItems().size() > 0 ) {
@@ -135,7 +147,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         if ( mIsActive ) {
             mEventDataList.add(event, System.currentTimeMillis());
         }
-        processCacheFullTimeout();
+        processCacheFinished();
     }
 
     @Override
@@ -144,11 +156,11 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     }
 
     @Override
-    public void onFrizzChanged(FrizzEvent sensorEvent) {
+    public void onFrizzChanged(FrizzEvent event) {
         if ( mIsActive ) {
-            mEventDataList.add(sensorEvent, System.currentTimeMillis());
+            mEventDataList.add(event, System.currentTimeMillis());
         }
-        processCacheFullTimeout();
+        processCacheFinished();
     }
 
     public interface SensorReaderListener {

@@ -28,6 +28,7 @@ public class StatusFragment extends Fragment {
     private TextView mTextViewPercentDone;
     private TextView mBatteryStatus;
     private TextView mWifiStatus;
+    private TextView mTextViewInformation;
 
 
     private OnFragmentInteractionListener mListener;
@@ -62,10 +63,13 @@ public class StatusFragment extends Fragment {
         mTextViewUploadProcessing = ( TextView ) view.findViewById(R.id.textViewUploadProcessing);
         mTextViewUploadDone = ( TextView ) view.findViewById(R.id.textViewUploadDone);
         mTextViewPercentDone = ( TextView ) view.findViewById(R.id.textViewPercentDone);
+        mTextViewInformation = ( TextView ) view.findViewById(R.id.textViewInformation);
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
 
         // hide the total line
         view.findViewById(R.id.tableRowTotal).setVisibility(View.GONE);
+        // hide the information line
+        view.findViewById(R.id.textViewInformation).setVisibility(View.GONE);
 
         return view;
     }
