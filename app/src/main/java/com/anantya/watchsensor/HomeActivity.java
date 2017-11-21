@@ -28,6 +28,14 @@ import com.anantya.watchsensor.services.WatchSensorService;
 
 import java.util.Locale;
 
+/*
+
+    For Watch www.exschina.com
+    Product: G9
+
+
+
+ */
 
 public class HomeActivity extends AppCompatActivity  implements SettingsFragment.OnSettingsFragmentListener {
 

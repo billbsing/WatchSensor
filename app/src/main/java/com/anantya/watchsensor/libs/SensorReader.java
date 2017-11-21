@@ -9,11 +9,17 @@ import android.text.format.DateUtils;
 import android.util.EventLog;
 import android.util.Log;
 
+import com.anantya.watchsensor.data.EventDataItem;
 import com.anantya.watchsensor.data.EventDataList;
 import com.anantya.watchsensor.data.SensorList;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jp.megachips.frizzservice.Frizz;
+import jp.megachips.frizzservice.FrizzEvent;
+import jp.megachips.frizzservice.FrizzListener;
+import jp.megachips.frizzservice.FrizzManager;
 
 /**
  * Created by bill on 10/11/17.
@@ -21,14 +27,16 @@ import java.util.List;
 
 
 
-public class SensorReader implements SensorEventListener {
+public class SensorReader implements SensorEventListener, FrizzListener {
     private SensorManager mSensorManager;
     private List<Sensor> mSensorList;
     private EventDataList mEventDataList;
     private SensorReaderListener mListener;
     private boolean mIsActive;
     private long mCacheTimeoutTime;
+    private FrizzManager mFrizzManager;
 
+    private static final String TAG = "SensorReader";
 /*
 
 Accelerometer, SENSOR_DELAY_FASTEST: 18-20 ms
@@ -62,6 +70,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mEventDataList = new EventDataList();
         loadSensorList();
         mIsActive = true;
+        mFrizzManager = FrizzManager.getFrizzService(context);
     }
 
     protected void loadSensorList() {
@@ -74,6 +83,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
                 mSensorList.add(sensor);
             }
         }
+//        mFrizzManager.HRBloodParameter(130, 70);
     }
 
     public List<Sensor> getSensorList() { return mSensorList; }
@@ -83,10 +93,12 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         for ( int i = 0; i < mSensorList.size(); i ++) {
             mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
         }
+        mFrizzManager.registerListener(this, Frizz.Type.SENSOR_TYPE_BLOOD_PRESSURE);
     }
 
     public void stop() {
         mSensorManager.unregisterListener(this);
+        mFrizzManager.unregisterListener(this, Frizz.Type.SENSOR_TYPE_BLOOD_PRESSURE);
     }
 
     public boolean isActive() {
@@ -102,16 +114,15 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mIsActive = value;
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if ( mIsActive ) {
-            mEventDataList.add(event, System.currentTimeMillis());
-        }
+    protected void processCacheFullTimeout() {
         if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {
             mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
             if ( mEventDataList.getItems().size() > 0 ) {
+//                EventDataList distinctList = mEventDataList.getDistinctList();
+//                Log.d(TAG, "Distinct list size = " + distinctList.getItems().size());
                 if (mListener != null) {
-                    if (mListener.onCacheFull(mEventDataList)) {
+                    // send out a copy of the list
+                    if (mListener.onCacheFull(mEventDataList.clone())) {
                         mEventDataList.clear();
                     }
                 }
@@ -120,8 +131,24 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     }
 
     @Override
+    public void onSensorChanged(SensorEvent event) {
+        if ( mIsActive ) {
+            mEventDataList.add(event, System.currentTimeMillis());
+        }
+        processCacheFullTimeout();
+    }
+
+    @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    @Override
+    public void onFrizzChanged(FrizzEvent sensorEvent) {
+        if ( mIsActive ) {
+            mEventDataList.add(sensorEvent, System.currentTimeMillis());
+        }
+        processCacheFullTimeout();
     }
 
     public interface SensorReaderListener {
@@ -129,4 +156,5 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         public void onActiveChange(boolean isActive);
 
     }
+
 }

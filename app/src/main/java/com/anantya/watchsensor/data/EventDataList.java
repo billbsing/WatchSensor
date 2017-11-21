@@ -8,8 +8,11 @@ import android.os.Parcelable;
 import com.anantya.watchsensor.db.EventDataModel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+
+import jp.megachips.frizzservice.FrizzEvent;
 
 /**
  * Created by bill on 10/6/17.
@@ -23,6 +26,16 @@ public class EventDataList implements Parcelable {
         mItems = new ArrayList<EventDataItem>();
     }
 
+    public EventDataList(EventDataList source) {
+        mItems = new ArrayList<>();
+        ListIterator<EventDataItem> iterator = source.getItems().listIterator();
+        while( iterator.hasNext()) {
+            EventDataItem item = iterator.next();
+            add(item.clone());
+            iterator.remove();
+        }
+    }
+
     public void clear() {
         mItems.clear();
     }
@@ -32,6 +45,12 @@ public class EventDataList implements Parcelable {
     public List<EventDataItem> getItems() { return mItems; }
 
     public EventDataItem add(SensorEvent sensorEvent, long systemTimestamp) {
+        EventDataItem eventDataItem = new EventDataItem(sensorEvent, systemTimestamp);
+        mItems.add(eventDataItem);
+        return eventDataItem;
+    }
+
+    public EventDataItem add(FrizzEvent sensorEvent, long systemTimestamp) {
         EventDataItem eventDataItem = new EventDataItem(sensorEvent, systemTimestamp);
         mItems.add(eventDataItem);
         return eventDataItem;
@@ -60,6 +79,35 @@ public class EventDataList implements Parcelable {
             iterator.remove();
         }
         return newList;
+    }
+
+    public boolean findItem(EventDataItem findItem) {
+        boolean result = false;
+        ListIterator<EventDataItem> iterator = mItems.listIterator();
+        while( iterator.hasNext() ) {
+            EventDataItem item = iterator.next();
+            if ( item.getName().equals(findItem.getName()) && Arrays.equals(item.getValues(), findItem.getValues())) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+
+    public EventDataList getDistinctList() {
+        EventDataList newList = new EventDataList();
+        ListIterator<EventDataItem> iterator = mItems.listIterator();
+        while( iterator.hasNext() ) {
+            EventDataItem item = iterator.next();
+            if ( ! newList.findItem(item)) {
+                newList.add(item);
+            }
+        }
+        return newList;
+    }
+
+    public EventDataList clone() {
+        return new EventDataList(this);
     }
 
     @Override

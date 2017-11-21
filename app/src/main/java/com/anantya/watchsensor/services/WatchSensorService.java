@@ -29,6 +29,8 @@ import com.anantya.watchsensor.libs.BatteryHelper;
 import com.anantya.watchsensor.libs.SensorReader;
 import com.anantya.watchsensor.services.EventDataCacheService;
 
+import jp.megachips.frizzservice.FrizzManager;
+
 public class WatchSensorService extends Service {
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
