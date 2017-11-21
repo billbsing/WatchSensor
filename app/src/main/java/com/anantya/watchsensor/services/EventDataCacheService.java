@@ -40,8 +40,7 @@ public class EventDataCacheService extends IntentService {
 
     private static final String TAG = "EventDataCacheService";
 
-    private SQLiteDatabase mDB;
-    private EventDataStatItem mEventDataStatItem;
+//     private SQLiteDatabase mDB;
     private EventDataCache mEventDataCache;
 
 
@@ -104,7 +103,7 @@ public class EventDataCacheService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         if (intent != null) {
-            openHandle();
+            mEventDataCache = new EventDataCache(getFilesDir());
 
             String action = intent.getAction();
             if (ACTION_SAVE.equals(action)) {
@@ -130,17 +129,7 @@ public class EventDataCacheService extends IntentService {
             } else if ( ACTION_REQUEST_STATS.equals(action)) {
                 postBroadcastOnActionDone(action);
             }
-            closeHandle();
         }
-    }
-
-    protected void openHandle() {
-        mEventDataCache = new EventDataCache(getFilesDir());
-        mEventDataStatItem = mEventDataCache.getRecordCountStats();
-    }
-
-    protected void closeHandle() {
-
     }
 
 
@@ -153,10 +142,11 @@ public class EventDataCacheService extends IntentService {
     // for a safe purge only do a purge if there is now waiting data to upload
     protected void purgeSensorEvent(boolean isSafe) {
 
+        EventDataStatItem eventDataStatItem = mEventDataCache.getRecordCountStats();
         boolean isPurge = true;
         if ( isSafe ) {
             rebuildStats();
-            if ( mEventDataStatItem.getUploadWait() > 0 || mEventDataStatItem.getUploadProcessing() > 0) {
+            if ( eventDataStatItem.getUploadWait() > 0 || eventDataStatItem.getUploadProcessing() > 0) {
                 isPurge = false;
             }
         }
@@ -180,22 +170,23 @@ public class EventDataCacheService extends IntentService {
 
     protected void rebuildStats() {
         mEventDataCache.rebuildRecordStats();
-        mEventDataStatItem = mEventDataCache.getRecordCountStats();
     }
 
     protected void postBroadcastOnActionDone(String action) {
+        EventDataStatItem eventDataStatItem = mEventDataCache.getRecordCountStats();
         LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
         Intent intent = new Intent(ON_ACTION_DONE);
         intent.putExtra(PARAM_ACTION_NAME, action);
-        intent.putExtra(PARAM_EVENT_DATA_STATS_ITEM, mEventDataStatItem);
+        intent.putExtra(PARAM_EVENT_DATA_STATS_ITEM, eventDataStatItem);
         broadcastManager.sendBroadcast(intent);
     }
     protected void postBroadcastOnUploadDataDone( String action, EventDataList eventDataList) {
+        EventDataStatItem eventDataStatItem = mEventDataCache.getRecordCountStats();
         LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(this);
         Intent intent = new Intent(ON_ACTION_DONE);
         intent.putExtra(PARAM_ACTION_NAME, action);
         intent.putExtra(PARAM_EVENT_DATA_LIST, eventDataList);
-        intent.putExtra(PARAM_EVENT_DATA_STATS_ITEM, mEventDataStatItem);
+        intent.putExtra(PARAM_EVENT_DATA_STATS_ITEM, eventDataStatItem);
         broadcastManager.sendBroadcast(intent);
     }
 
