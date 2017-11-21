@@ -166,6 +166,17 @@ public class UploadService extends IntentService {
                         setEmptyRequestCount(UploadService.this, emptyRequestCount);
 //                        Log.d(TAG, "increment empty request counter " + emptyRequestCount);
                     }
+/*
+                    EventDataList filterList = eventDataList.filterList(new EventDataList.ItemFilter() {
+                        @Override
+                        public boolean isValid(EventDataItem item) {
+                            return item.getName().equals("BloodPressure");
+                        }
+                    });
+                    for ( int i = 0; i < filterList.getItems().size(); i ++) {
+                        Log.d(TAG, "BP: " + filterList.getItems().get(i).toString());
+                    }
+*/
                     while ( eventDataList.getItems().size() > 0 ) {
                         EventDataList uploadList = eventDataList.extractList(UPLOAD_BLOCK_COUNT);
                         if ( uploadList.getItems().size() > 0 ) {

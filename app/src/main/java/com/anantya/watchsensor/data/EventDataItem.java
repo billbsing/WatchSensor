@@ -157,6 +157,14 @@ public class EventDataItem implements Parcelable {
 //    public long getRetryTimeoutTime() { return mRetryTimeoutTime; }
 //    public void setRetryTimeoutTime(long value) { mRetryTimeoutTime = value; }
 
+    public String toString() {
+        String text = mName + ":";
+        for ( int i = 0; i < mValues.length; i ++ ) {
+            text += mValues[i] + ",";
+        }
+        text = text.substring(0, text.length() - 1);
+        return text;
+    }
 
     @Override
     public int describeContents() {

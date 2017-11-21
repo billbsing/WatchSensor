@@ -55,6 +55,9 @@ class CacheData {
 
         values = eventDataItem.getValues();
         mValueCount = (byte) values.length;
+        if ( mValueCount > FIELD_NAME_LENGTH) {
+            mValueCount = FIELD_VALUE_LENGTH;
+        }
         for ( int i = 0; i < mValueCount && i < FIELD_VALUE_LENGTH; i ++ ) {
             mValues[i] = values[i];
         }

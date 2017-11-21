@@ -102,6 +102,8 @@ public class WatchSensorService extends Service {
             else {
                 mSensorReader.stop();
                 UploadDataJob.start(getApplicationContext());
+                // set the empty request counter back to 0, so the auto rebuild start checking again
+                UploadService.setEmptyRequestCount(getApplicationContext(), 0);
             }
 
             Log.d(TAG, text);

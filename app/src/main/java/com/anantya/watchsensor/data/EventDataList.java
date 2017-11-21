@@ -81,6 +81,20 @@ public class EventDataList implements Parcelable {
         return newList;
     }
 
+    public EventDataList filterList(ItemFilter filter ) {
+
+        EventDataList newList = new EventDataList();
+
+        ListIterator<EventDataItem> iterator = mItems.listIterator();
+        while( iterator.hasNext()) {
+            EventDataItem item = iterator.next();
+            if ( filter.isValid(item) ) {
+                newList.add(item);
+            }
+        }
+        return newList;
+    }
+
     public boolean findItem(EventDataItem findItem) {
         boolean result = false;
         ListIterator<EventDataItem> iterator = mItems.listIterator();
@@ -135,6 +149,10 @@ public class EventDataList implements Parcelable {
             return new EventDataList[size];
         }
     };
+
+    public interface ItemFilter {
+        boolean isValid(EventDataItem item);
+    }
 
 
 }
