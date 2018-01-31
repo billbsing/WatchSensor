@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">FrizzMonitor Ver0.1</string>
+    <string name="action_settings">Settings</string>
+    <string name="reset">Reset</string>
+    <string name="calibration">Calibration</string>
+    <string name="menu">Menu</string>
+    <string name="refresh">Refresh</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="reStart">RStart</string>
+
+    <string name="sensor_view">Sensor Viewer</string>
+    <string name="pdr">PDR stable</string>
+    <string name="pdr_fix">PDR fix</string>
+    <string name="pdr_swing">PDR swing</string>
+    <string name="pdr_wrist">PDR wrist</string>
+    <string name="pdr_auto">PDR auto</string>
+    <string name="pdr_watching">PDR watching</string>
+    <string name="menu_sensor_list">Sensor List</string>
+    <string name="menu_magnetic_calibration">Magnetic Calibration</string>
+    <dimen name="menu_item_size">14pt</dimen>
+    <string name="now_calibrating">Now calibrating</string>
+    <string name="push_calibration_button">Push Calibration button</string>
+    <string name="please_try_again">Please try again!</string>
+    <string name="calibration_success">Calibration sucess</string>
+    <string name="setting_ok">setting OK!</string>
+    <string name="reset_ok">reset OK!</string>
+	<string name="push_stop_button">Push stop button</string>
+
+    <string name="sensor_accel">accel sensor</string>
+    <string name="sensor_magnet">magnet sensor</string>
+    <string name="sensor_gyro">gyro sensor</string>
+    <string name="now_eraseall">Now erasing</string>
+    <string name="now_ble_receive">Data receiving</string>
+
+    <string name="set_sensor_id">Setting Sensor ID</string>
+    <string name="set_cycle">Setting Cycle</string>
+    <string name="save_raw_data">RAW data save?</string>
+    <string name="status">Status</string>
+    <string name="llsWrite">LinkLossAlert</string>
+    <string name="iasWrite">ImmediateAlert</string>
+    <string name="ready">Ready</string>
+    <string name="unpair">unpair</string>
+    <string name="pair">pair</string>
+    <string name="RadioButton1">Alert level high</string>
+    <string name="RadioButton2">Alert level mid</string>
+    <string name="RadioButton3">Stop alerting</string>
+    <string name="SystemId">SystemId</string>
+    <string name="ModelNumber">ModelNumber</string>
+    <string name="SerialNumber">SerialNumber</string>
+    <string name="FirmwareRevision">FirmwareRevision</string>
+    <string name="HardwareRevision">HardwareRevision</string>
+    <string name="SoftwareRevision">SoftwareRevision</string>
+    <string name="ManufactureName">ManufactureName</string>
+    <string name="RegCertDataList">RegCertDataList</string>
+    <string name="ManufactureId">ManufactureId</string>
+    <string name="BatteryLevel">Battery Level</string>
+    <string name="OrgId">OrganizationId</string>
+    <string name="Txpower">Txpower Level</string>
+    <string name="Noupdate">No Update</string>
+    <string name="ReadTxPower">ReadTxPower</string>
+    <string name="high_alert">HIGH Alert triggered!</string>
+    <string name="low_alert">LOW Alert triggered!</string>
+    <string name="writeTxnoti">TxNoti</string>
+    <string name="readRssi">Read Rssi Value</string>
+    <string name="Readdummy">D Read</string>
+    <string name="removeBond">Remove Bond</string>
+    <string name="paired">paired</string>
+    <string name="popup_title">Quit this Application?</string>
+    <string name="popup_message">Do you want to quit this Application?</string>
+    <string name="popup_yes">YES</string>
+    <string name="popup_no">NO</string>
+    <string name="scan">Scan</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    <string name="reset_frizz">Reset Frizz?</string>
+    <string name="calibration_frizz">Calibration Frizz?</string>
+    <string name="message">Message</string>
+    <string name="erase_mode">Select ERASE mode.</string>
+    <string name="all_erase">ALL ERASE</string>
+    <string name="quick_erase">QUICK ERASE</string>
+	<string name="debug_set_position">Offset position</string>
+	<string name="debug_set_direction">Offset direction</string>
+</resources>

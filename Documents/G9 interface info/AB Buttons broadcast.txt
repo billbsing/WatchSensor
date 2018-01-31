@@ -1,0 +1,6 @@
+	private static String ACTION_SOS_LONG = "com.dhy.intent.action.KEY_CALLSOS_LONG_PRESSED";
+	private static String ACTION_SOS_SHORT = "com.dhy.intent.action.KEY_CALLSOS_SHORT_PRESSED";
+	private static String ACTION_CALL_A_LONG = "com.dhy.intent.action.KEY_CALLA_LONG_PRESSED";
+	private static String ACTION_CALL_A_SHORT = "com.dhy.intent.action.KEY_CALLA_SHORT_PRESSED";
+	private static String ACTION_CALL_B_LONG = "com.dhy.intent.action.KEY_CALLB_LONG_PRESSED";
+	private static String ACTION_CALL_B_SHORT = "com.dhy.intent.action.KEY_CALLB_SHORT_PRESSED";

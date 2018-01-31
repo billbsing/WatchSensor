@@ -1,0 +1,137 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:orientation="vertical" >
+    
+
+  <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" >
+        
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textColor="@color/black"
+	    android:text="Magnetic calibration count"/>
+    
+	<TextView
+	    android:id="@+id/magneticCalibrationCountText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+        
+    
+	<TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textColor="@color/black"
+	    android:text="Validity Magnetic Value \n 0:validity value \n 1:wrong value"/>
+    
+	<TextView
+	    android:id="@+id/magneticValidityValueText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+	
+	<TextView
+	    android:textColor="@color/black"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:text="Quarity of magnetic calibration \n (high quarity)3 > 2 > 1 > 0 (low quarity)"/>
+    
+	<TextView
+	    android:id="@+id/magneticQuarityText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+	
+	<TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textColor="@color/black"
+	    android:text="Result of magnetic calibratoin\n 0:calibration failed \n 1:calibration success"/>
+    
+	<TextView
+	    android:id="@+id/magneticCalibrationResultText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+	
+	<TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textColor="@color/black"
+	    android:text="Accel value"/>
+	
+	<TextView
+	    android:id="@+id/magneticAccelValueText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+	
+	<TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textColor="@color/black"
+	    android:text="Mangnetic value"/>
+	
+	<TextView
+	    android:id="@+id/magneticValueText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+	
+	<TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textColor="@color/black"
+	    android:text="Calibration Parameter"/>
+    
+	<TextView
+	    android:id="@+id/magneticParameterText"
+	    android:textColor="@color/black"
+	    android:layout_height="wrap_content"
+	    android:layout_width="match_parent"
+	    android:paddingBottom="20dp"/>
+
+	</LinearLayout>
+	
+    </ScrollView>
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/magneticMenuButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@+string/menu" />
+
+        <Button
+            android:id="@+id/magneticControlButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@+string/start" />
+
+    </LinearLayout>
+    
+
+
+</LinearLayout>

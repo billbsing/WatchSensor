@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">heateRate</string>
+    <string name="hight_num">130</string>
+    <string name="low_num">70</string>
+    <string name="action_settings">Settings</string>
+    <string name="test_blood">test blood</string>
+    <string name="test_records">test records</string>
+    <string name="test_results">test results</string>
+    <string name="heart_rate">heart rate: </string>
+    <string name="blood_pressure">blood pressure</string>
+    <string name="low_blood_pressure">low  blood pressure: </string>
+    <string name="hight_blood_pressure">hight blood pressure: </string>
+    <string name="please_input">please input your normal blood pressure</string>
+
+    <string name="start">start</string>
+    <string name="stop">stop</string>
+    
+</resources>

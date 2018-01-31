@@ -1,0 +1,84 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:orientation="vertical" >
+
+    <ScrollView
+        android:id="@+id/scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3" >
+
+        <TableLayout
+            android:id="@+id/TableLayout1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="0" >
+        </TableLayout>
+    </ScrollView>
+
+    <ScrollView
+        android:id="@+id/scroll_view2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="4" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="horizontal" >
+
+            <TableLayout
+                android:id="@+id/TableLayout2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black" >
+
+                
+                <!-- <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" >
+					
+                    <TextView android:text="sensor \n name" 
+                        android:textColor="@color/black"/>
+
+                    <TextView android:text="delay time \n (Reporting)"
+                        android:textColor="@color/black" />
+
+                    <TextView android:text="delay time \n (Suspend)"
+                        android:textColor="@color/black" />
+                </TableRow> -->
+               
+            </TableLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/sensorListMenuButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@+string/menu" />
+
+        <Button
+            android:id="@+id/sensorListResetButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@+string/reset" />
+
+        <Button
+            android:id="@+id/sensorListControlButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@+string/start" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,64 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/PEDOMETER_CLEAR_COUNT"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Reset pedometer count"/>
+    <item
+        android:id="@+id/PEDOMETER_SET_THRESHOLD"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Set pedometer out threshold"/>
+    <item
+        android:id="@+id/GESTURE_CMD_ENABLE"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Enable gesture"/>
+    <item
+        android:id="@+id/GESTURE_CMD_POS"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Set gesture position"/>
+    <item
+        android:id="@+id/GESTURE_CMD_SEN"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Set gesture Senstivity"/>
+   <item
+        android:id="@+id/MOTION_SENSING_TIME"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Motion Sensing Stop Wait Time"/>        
+   <item
+        android:id="@+id/MOTION_NOTIFY_TYPE"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title=" Enable/Disable the report of motion status"/>        
+   <item
+        android:id="@+id/FALL_DOWN_CLEAR"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Fall down detection count clear"/>        
+   <item
+        android:id="@+id/FALL_DOWN_SEN"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Fall Down Detection Sensitivity"/>        
+   <item
+        android:id="@+id/CALORIE_DATA_CLR"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Calorie Data Clear"/>       
+   <item
+        android:id="@+id/CALORIE_HEIGHT_WEIGHT"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Calorie Height/Weight Parameter"/>       
+   <item
+        android:id="@+id/BLOOD_MAXMIN_BP"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="Set BP parameter values"/>     
+
+</menu>

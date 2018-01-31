@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/debug_set_position"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/debug_set_position"/>
+    <item
+        android:id="@+id/debug_set_direction"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/debug_set_direction"/>
+
+</menu>

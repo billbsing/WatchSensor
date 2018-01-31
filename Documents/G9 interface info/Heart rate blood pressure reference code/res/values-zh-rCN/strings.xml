@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">心率</string>
+    <string name="action_settings">设置</string>
+    <string name="test_blood">测量血压</string>
+    <string name="test_records">测量记录</string>
+    <string name="test_results">测量结果</string>
+    <string name="heart_rate">心率</string>
+    <string name="blood_pressure">血压</string>
+    <string name="hight_blood_pressure">高压</string>
+    <string name="low_blood_pressure">低压</string>
+    <string name="please_input">请输入您正常的血压值</string>
+
+</resources>

@@ -1,0 +1,10 @@
+fall alert's sensor id           
+Frizz.Type.SENSOR_TYPE_ACCEL_FALL_DOWN
+
+note: only this sensor function has data updating, which mean fall alert trigger. pls not need to pay attention to the data value, which is no meaning, which need to know is whether have data updating!
+
+
+To Matej Pls:
+All sensors of this watch are controled by this FRIEZZ chip.FRIZZ chip manage and judge adgyroscope, heart rate, blood pressure,Wrist bright screen, fall posture etc.If you only want to use our fall alert function, only need to register sensor Frizz.Type.SENSOR_TYPE_ACCEL_FALL_DOWN   
+If this virtual sensor has data updating, which mean watch has fall event.
+If you also want to study heart rate blood pressure integration, pls study refer to our hr bp code and the FRIZZ original factory information.

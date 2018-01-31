@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="co.megachips.frizzmonitor"
+	android:versionCode="1"
+	android:versionName="1.0" >
+
+	<uses-sdk
+		android:minSdkVersion="19"
+		android:targetSdkVersion="21" />
+
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
+	<uses-permission android:name="android.permission.CAMERA" />
+	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	<uses-permission android:name="android.permission.VIBRATE"></uses-permission>
+	<application
+		android:allowBackup="true"
+		android:icon="@mipmap/frizz_icon"
+		android:label="@string/app_name"
+		android:theme="@style/CustomTheme" >
+		<activity
+			android:name="co.megachips.frizzmonitor.MainMenu"
+			android:label="@string/app_name" >
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				</intent-filter>
+		</activity>
+
+		<activity android:name="co.megachips.frizzmonitor.sub_activity.PDR"
+			android:label="@string/app_name"/>
+		
+		<activity android:name="co.megachips.frizzmonitor.sub_activity.SensorList"
+		     android:screenOrientation="portrait"
+		    android:label="@string/app_name"/>
+
+		<activity android:name="co.megachips.frizzmonitor.sub_activity.MagneticCalibration"
+		     android:screenOrientation="portrait"
+		    android:label="@string/app_name"/>
+		
+		<activity android:name="co.megachips.frizzmonitor.sub_activity.SensorView"
+			android:label="@string/app_name" />
+		
+		<activity android:name="co.megachips.frizzmonitor.DialogActivity"
+    		android:theme="@android:style/Theme.Translucent.NoTitleBar">
+		</activity>
+
+		<activity
+           android:name="co.megachips.frizzmonitor.recognition.LogReplayModeActivity"
+           android:screenOrientation="portrait"
+           android:hardwareAccelerated="false">
+        </activity>
+
+        <activity
+           android:name="co.megachips.frizzmonitor.recognition.LoggingModeActivity"
+           android:screenOrientation="landscape">
+        </activity>
+
+       <activity
+           android:name="co.megachips.frizzmonitor.fileexplorer.FileSelectionActivity"
+           android:screenOrientation="portrait">
+        </activity>
+
+        <activity
+           android:name="co.megachips.frizzmonitor.childradar.ChildRadarActivity"
+           android:screenOrientation="portrait">
+        </activity>
+
+<!--         <receiver -->
+<!--             android:name="co.megachips.frizzmonitor.sub_activity.PDR$MyReceiver" -->
+<!--             android:enabled="true" -->
+<!--             android:exported="true" > -->
+<!--             <intent-filter> -->
+<!--                 <action android:name="com.autonavi.android.brc.setpdr"/> -->
+<!--             </intent-filter> -->
+<!--         </receiver> -->
+        
+	</application>
+
+</manifest>
