@@ -32,7 +32,6 @@ public class EventDataList implements Parcelable {
         while( iterator.hasNext()) {
             EventDataItem item = iterator.next();
             add(item.clone());
-            iterator.remove();
         }
     }
 

@@ -269,7 +269,7 @@ public class FrizzManager {
 
 						if (frizzEvent.sensor.mType == Frizz.Type.SENSOR_TYPE_PDR) {
 							//Log.d("debug", "frizzservice " + intent);
-							Log.i("frizz", "frizzservice " + intent);
+//							Log.i("frizz", "frizzservice " + intent);
 							intent.putExtra("timestamp", e.timestamp);
 							intent.putExtra("stepcount", (long) e.values[0]);
 							intent.putExtra("value0", e.values[1]);

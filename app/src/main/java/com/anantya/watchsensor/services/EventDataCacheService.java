@@ -190,8 +190,6 @@ public class EventDataCacheService extends IntentService {
         broadcastManager.sendBroadcast(intent);
     }
 
-
-
 }
 
 /* old code with Sqlite database

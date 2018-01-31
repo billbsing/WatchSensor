@@ -73,6 +73,7 @@ public class WatchSensorService extends Service {
                         // request an upload
                         UploadService.requestUpload(WatchSensorService.this, configData);
                     }
+
                 }
             } catch ( InterruptedException e) {
                 Thread.currentThread().interrupt();
