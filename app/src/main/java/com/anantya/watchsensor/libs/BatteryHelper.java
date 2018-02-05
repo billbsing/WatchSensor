@@ -24,6 +24,8 @@ public class BatteryHelper {
                 || plugStatus == BatteryManager.BATTERY_PLUGGED_USB) {
             result = true;
         }
+// testing: force to always use battery
+//        result = false;
         return result;
     }
 

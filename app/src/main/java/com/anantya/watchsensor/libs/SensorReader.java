@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.support.annotation.NonNull;
 import android.text.format.DateUtils;
 import android.util.EventLog;
 import android.util.Log;
@@ -15,6 +16,11 @@ import com.anantya.watchsensor.data.SensorList;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jp.megachips.frizzservice.Frizz;
 import jp.megachips.frizzservice.FrizzEvent;
@@ -37,6 +43,8 @@ public class SensorReader implements SensorEventListener, FrizzListener {
     private FrizzManager mFrizzManager;
     private boolean mIsSenorsEnabled;
     private boolean mIsHeartRateEnabled;
+    private Lock mLock;
+
 
     private static final String TAG = "SensorReader";
 /*
@@ -83,6 +91,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mIsActive = true;
         mIsSenorsEnabled = true;
         mIsHeartRateEnabled = true;
+        mLock = new ReentrantLock();
     }
 
     protected void loadSensorList() {
@@ -147,10 +156,17 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
             if ( mEventDataList.getItems().size() > 0 ) {
 //                EventDataList distinctList = mEventDataList.getDistinctList();
 //                Log.d(TAG, "Distinct list size = " + distinctList.getItems().size());
+
                 if (mListener != null) {
-                    // send out a copy of the list
-                    if (mListener.onCacheFull(mEventDataList.clone())) {
-                        mEventDataList.clear();
+                    // now try to lock the list for processing
+                    mLock.lock();
+                    try {
+                        // send out a copy of the list
+                        if (mListener.onCacheFull(mEventDataList.clone())) {
+                            mEventDataList.clear();
+                        }
+                    } finally {
+                        mLock.unlock();
                     }
                 }
             }
