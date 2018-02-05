@@ -4,7 +4,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.drm.DrmStore;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.NavUtils;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -214,6 +216,9 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         int id = item.getItemId();
 
         switch (id ) {
+            case android.R.id.home:
+                backPressed();
+                return true;
             case R.id.action_settings:
                 showSettingsFragment();
                 return true;
@@ -241,10 +246,9 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     public void onBackPressed() {
         super.onBackPressed();
         if (mStatusFragment != null) {
-            assignStatusFragmentValues();
-            ActionBar actionBar = getSupportActionBar();
-            actionBar.setTitle(R.string.application_title);
+            backPressed();
         }
+
     }
 
     @Override
@@ -272,7 +276,8 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         fragmentManager.beginTransaction().replace(R.id.fragmentContainer, mStatusFragment).commit();
         try {
             ActionBar actionBar = getSupportActionBar();
-            actionBar.setHomeButtonEnabled(false);
+            actionBar.setDisplayHomeAsUpEnabled(false);
+//            actionBar.setHomeButtonEnabled(false);
             actionBar.setTitle(R.string.application_title);
         } catch ( NullPointerException e) {
 
@@ -282,10 +287,11 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     protected void showSettingsFragment() {
         mSettingsFragment = SettingsFragment.newInstance(mConfigData);
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.fragmentContainer, mSettingsFragment).addToBackStack("settings").commit();
+        fragmentManager.beginTransaction().add(R.id.fragmentContainer, mSettingsFragment).addToBackStack("settings").commit();
         try {
             ActionBar actionBar = getSupportActionBar();
-            actionBar.setHomeButtonEnabled(true);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+//            actionBar.setHomeButtonEnabled(true);
             actionBar.setTitle(R.string.settings_fragment_title);
         } catch( NullPointerException e) {
 
@@ -301,6 +307,15 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         }
     }
 
+    protected void backPressed() {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        if ( fragmentManager.getBackStackEntryCount() > 0 ) {
+            fragmentManager.popBackStack();
+        }
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle(R.string.application_title);
+        actionBar.setDisplayHomeAsUpEnabled(false);
+    }
 }
 
 

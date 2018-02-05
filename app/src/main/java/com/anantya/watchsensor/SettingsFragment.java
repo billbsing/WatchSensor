@@ -9,6 +9,8 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -21,6 +23,9 @@ public class SettingsFragment extends Fragment {
 
     private ConfigData mConfigData;
     private EditText mEditTextWatchId;
+    private CheckBox mCheckboxTrackingEnabled;
+    private CheckBox mCheckboxHeartRateActive;
+    private CheckBox mCheckboxGPSActive;
 
     private OnSettingsFragmentListener mListener;
 
@@ -56,6 +61,13 @@ public class SettingsFragment extends Fragment {
         mEditTextWatchId = (EditText) view.findViewById(R.id.editTextWatchId);
         mEditTextWatchId.setText(mConfigData.getWatchId());
 
+        mCheckboxTrackingEnabled = (CheckBox) view.findViewById(R.id.checkBoxTrackingEnabled);
+        mCheckboxTrackingEnabled.setChecked(mConfigData.isTrackingEnabled());
+        mCheckboxHeartRateActive = (CheckBox) view.findViewById(R.id.checkBoxHeartRateActive);
+        mCheckboxHeartRateActive.setChecked(mConfigData.isHeartRateActive());
+        mCheckboxGPSActive = (CheckBox) view.findViewById(R.id.checkBoxGPSActive);
+        mCheckboxGPSActive.setChecked(mConfigData.isGPSActive());
+
         try {
             TextView textViewVersion = ( TextView) view.findViewById(R.id.textViewVersion);
             PackageInfo info = getActivity().getPackageManager().getPackageInfo(getActivity().getPackageName(), 0);
@@ -64,6 +76,13 @@ public class SettingsFragment extends Fragment {
             e.printStackTrace();
         }
 
+        mCheckboxTrackingEnabled.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                mCheckboxHeartRateActive.setChecked(isChecked);
+                mCheckboxGPSActive.setChecked(isChecked);
+            }
+        });
 
         return view;
     }
@@ -74,6 +93,9 @@ public class SettingsFragment extends Fragment {
 
         ConfigData configData = mConfigData.clone();
         configData.setWatchId(mEditTextWatchId.getText().toString());
+        configData.setTrackingEnabled(mCheckboxTrackingEnabled.isChecked());
+        configData.setHeartRateActive(mCheckboxHeartRateActive.isChecked());
+        configData.setGPSActive(mCheckboxGPSActive.isChecked());
         if ( ! configData.equals(mConfigData)) {
             if ( mListener != null) {
                 mListener.onSettingsFragmentDataChange(configData);

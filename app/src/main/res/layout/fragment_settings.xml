@@ -2,6 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorDark"
     tools:context="com.anantya.watchsensor.SettingsFragment">
 
 
@@ -12,7 +13,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
+            android:orientation="vertical">
 
 
             <TextView
@@ -29,6 +30,39 @@
                 android:hint="Watch Id"
                 android:inputType="textShortMessage"
                 android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+            <CheckBox
+                android:id="@+id/checkBoxTrackingEnabled"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Tracking Enabled"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textColor="@color/colorLight"
+                tools:text="Tracking Enabled" />
+
+            <CheckBox
+                android:id="@+id/checkBoxHeartRateActive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Heart Rate Active"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textColor="@color/colorLight" />
+
+            <CheckBox
+                android:id="@+id/checkBoxGPSActive"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="GPS Active"
+                android:textAppearance="@style/TextAppearance.AppCompat.Large"
+                android:textColor="@color/colorLight" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/textViewVersionTitle"

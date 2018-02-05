@@ -35,6 +35,8 @@ public class SensorReader implements SensorEventListener, FrizzListener {
     private boolean mIsActive;
     private long mCacheTimeoutTime;
     private FrizzManager mFrizzManager;
+    private boolean mIsSenorsEnabled;
+    private boolean mIsHeartRateEnabled;
 
     private static final String TAG = "SensorReader";
 /*
@@ -79,6 +81,8 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mEventDataList = new EventDataList();
         loadSensorList();
         mIsActive = true;
+        mIsSenorsEnabled = true;
+        mIsHeartRateEnabled = true;
     }
 
     protected void loadSensorList() {
@@ -98,11 +102,15 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     public void start() {
         mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
-        for ( int i = 0; i < mSensorList.size(); i ++) {
-            mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
+        if ( mIsSenorsEnabled ) {
+            for (int i = 0; i < mSensorList.size(); i++) {
+                mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
+            }
         }
-        for ( int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i ++) {
-            mFrizzManager.registerListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
+        if ( mIsHeartRateEnabled ) {
+            for (int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i++) {
+                mFrizzManager.registerListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
+            }
         }
     }
 
@@ -125,6 +133,13 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         }
         mIsActive = value;
     }
+
+    // these options must be set before the 'start' method is called
+    public boolean isSensorsEnabled() { return mIsSenorsEnabled; }
+    public void setSenorsEnabled(boolean value) { mIsSenorsEnabled = value; }
+
+    public boolean isHeartRateEnabled() { return mIsHeartRateEnabled;}
+    public void setHeartRateEnabled(boolean value) { mIsHeartRateEnabled = value; }
 
     protected void processCacheFinished() {
         if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {

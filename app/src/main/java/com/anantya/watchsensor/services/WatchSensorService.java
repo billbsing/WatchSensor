@@ -93,12 +93,19 @@ public class WatchSensorService extends Service {
 
         @Override
         public void onActiveChange(boolean isActive) {
+            // get configdata
+            ConfigData configData = ConfigData.createFromPreference(getApplicationContext());
             String text = "Sensor reader off";
             if ( isActive) {
                 text = "Sensor reader on";
-                mSensorReader.start();
+                if ( configData.isTrackingEnabled() ) {
+                    mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
+                    mSensorReader.setHeartRateEnabled(configData.isHeartRateActive());
+                    text += " tracking enabled";
+                    mSensorReader.start();
+                }
                 UploadDataJob.cancel(getApplicationContext());
-                UploadService.setActive(WatchSensorService.this, false);
+                UploadService.setActive(getApplicationContext(), false);
             }
             else {
                 mSensorReader.stop();

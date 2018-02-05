@@ -27,6 +27,9 @@ public class ConfigData implements Parcelable {
     private String mURL;
     private String mMessageQueueName;
     private String mKeyname;
+    private boolean mIsTrackingEnabled;
+    private boolean mIsHeartRateActive;
+    private boolean mIsGPSActive;
 
 
     private static final String PREFERENCE_FILENAME = "ConfigData";
@@ -37,6 +40,10 @@ public class ConfigData implements Parcelable {
     private static final String PREFERENCE_URL = "url";
     private static final String PREFERENCE_MESSAGE_QUEUE_NAME = "message_queue_name";
     private static final String PREFERENCE_KEY_NAME = "key_name";
+    private static final String PREFERENCE_IS_TRACKING_ENABLED = "is_tracking_enabled";
+    private static final String PREFERENCE_IS_HEART_RATE_ACTIVE = "is_heart_rate_active";
+    private static final String PREFERENCE_IS_GPS_ACTIVE = "is_gps_active";
+
 
 
     private static final String DEFAULT_WATCH_ID = "watch-sensor";
@@ -44,6 +51,9 @@ public class ConfigData implements Parcelable {
     private static final String DEFAULT_PRIMARY_KEY = "+VZA00p8wmyWDQTTg1e8/O1FpgcTK5MTnFLGU1y7SVo=";
     private static final String DEFAULT_URL = "https://colifewatch.servicebus.windows.net";
     private static final String DEFAULT_MESSAGE_QUEUE_NAME = "colifewatchdata";
+    private static final boolean DEFAULT_IS_TRACKING_ENABLED = true;
+    private static final boolean DEFAULT_IS_HEART_RATE_ACTIVE = true;
+    private static final boolean DEFAULT_IS_GPS_ACTIVE = true;
 
 
 
@@ -73,6 +83,9 @@ public class ConfigData implements Parcelable {
         mURL = configData.getURL();
         mMessageQueueName = configData.getMesasgeQueueName();
         mKeyname = configData.getKeyname();
+        mIsTrackingEnabled = configData.isTrackingEnabled();
+        mIsHeartRateActive = configData.isHeartRateActive();
+        mIsGPSActive = configData.isGPSActive();
     }
 
     public void clear() {
@@ -82,6 +95,9 @@ public class ConfigData implements Parcelable {
         mURL = "";
         mMessageQueueName = "";
         mKeyname = "";
+        mIsTrackingEnabled = DEFAULT_IS_TRACKING_ENABLED;
+        mIsHeartRateActive = false;
+        mIsGPSActive = false;
     }
 
     public String getWatchId() {
@@ -124,6 +140,14 @@ public class ConfigData implements Parcelable {
         return result;
     }
 
+    public boolean isTrackingEnabled() { return mIsTrackingEnabled; }
+    public void setTrackingEnabled(boolean value) { mIsTrackingEnabled = value; }
+
+    public boolean isHeartRateActive() { return mIsHeartRateActive; }
+    public void setHeartRateActive( boolean value) { mIsHeartRateActive = value; }
+
+    public boolean isGPSActive() { return mIsGPSActive; }
+    public void setGPSActive(boolean value) { mIsGPSActive = value; }
 
     public void assignDefaults(Context context) {
         setWatchId(getDefaultWatchId(context));
@@ -131,7 +155,11 @@ public class ConfigData implements Parcelable {
         setPrimanryKey(DEFAULT_PRIMARY_KEY);
         setURL(DEFAULT_URL);
         setMesasgeQueueName(DEFAULT_MESSAGE_QUEUE_NAME);
+        setTrackingEnabled(DEFAULT_IS_TRACKING_ENABLED);
+        setHeartRateActive(DEFAULT_IS_HEART_RATE_ACTIVE);
+        setGPSActive(DEFAULT_IS_GPS_ACTIVE);
         saveToPreference(context, this);
+
     }
 
     protected String getDefaultWatchId(Context context) {
@@ -153,7 +181,9 @@ public class ConfigData implements Parcelable {
         mURL = sharedPreferences.getString(PREFERENCE_URL, "");
         mMessageQueueName = sharedPreferences.getString(PREFERENCE_MESSAGE_QUEUE_NAME, "");
         mKeyname = sharedPreferences.getString(PREFERENCE_KEY_NAME, "");
-
+        mIsTrackingEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_TRACKING_ENABLED, DEFAULT_IS_TRACKING_ENABLED);
+        mIsHeartRateActive = sharedPreferences.getBoolean(PREFERENCE_IS_HEART_RATE_ACTIVE, DEFAULT_IS_HEART_RATE_ACTIVE);
+        mIsGPSActive = sharedPreferences.getBoolean(PREFERENCE_IS_GPS_ACTIVE, DEFAULT_IS_GPS_ACTIVE);
     }
 
     public void wirteToPreference(SharedPreferences sharedPreferences) {
@@ -164,6 +194,9 @@ public class ConfigData implements Parcelable {
         editor.putString(PREFERENCE_URL, mURL);
         editor.putString(PREFERENCE_MESSAGE_QUEUE_NAME, mMessageQueueName);
         editor.putString(PREFERENCE_KEY_NAME, mKeyname);
+        editor.putBoolean(PREFERENCE_IS_TRACKING_ENABLED, mIsTrackingEnabled);
+        editor.putBoolean(PREFERENCE_IS_HEART_RATE_ACTIVE, mIsHeartRateActive);
+        editor.putBoolean(PREFERENCE_IS_GPS_ACTIVE, mIsGPSActive);
         editor.apply();
     }
 
@@ -178,7 +211,11 @@ public class ConfigData implements Parcelable {
                 && configData.getSecondaryKey().equals(getSecondaryKey())
                 && configData.getURL().equals(getURL())
                 && configData.getMesasgeQueueName().equals(getMesasgeQueueName())
-                && configData.getKeyname().equals(getPrimanryKey());
+                && configData.getKeyname().equals(getPrimanryKey())
+                && configData.isTrackingEnabled() == isTrackingEnabled()
+                && configData.isHeartRateActive() == isHeartRateActive()
+                && configData.isGPSActive() == isGPSActive()
+                ;
     }
 
     protected ConfigData(Parcel in) {
@@ -188,6 +225,9 @@ public class ConfigData implements Parcelable {
         mSecondaryKey = in.readString();
         mURL = in.readString();
         mMessageQueueName = in.readString();
+        mIsTrackingEnabled = in.readByte() != 0;
+        mIsHeartRateActive = in.readByte() != 0;
+        mIsGPSActive = in.readByte() != 0;
     }
 
     public static final Creator<ConfigData> CREATOR = new Creator<ConfigData>() {
@@ -216,6 +256,9 @@ public class ConfigData implements Parcelable {
         dest.writeString(mSecondaryKey);
         dest.writeString(mURL);
         dest.writeString(mMessageQueueName);
+        dest.writeByte((byte) (mIsTrackingEnabled ? 1: 0));
+        dest.writeByte((byte) (mIsHeartRateActive ? 1: 0));
+        dest.writeByte((byte) (mIsGPSActive ? 1: 0));
     }
 
 }
