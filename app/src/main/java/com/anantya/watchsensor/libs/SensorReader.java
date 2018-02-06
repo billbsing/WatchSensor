@@ -1,25 +1,30 @@
 package com.anantya.watchsensor.libs;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.text.format.DateUtils;
-import android.util.EventLog;
 import android.util.Log;
 
-import com.anantya.watchsensor.data.EventDataItem;
 import com.anantya.watchsensor.data.EventDataList;
 import com.anantya.watchsensor.data.SensorList;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import jp.megachips.frizzservice.Frizz;
@@ -32,8 +37,7 @@ import jp.megachips.frizzservice.FrizzManager;
  */
 
 
-
-public class SensorReader implements SensorEventListener, FrizzListener {
+public class SensorReader implements SensorEventListener, FrizzListener, LocationListener {
     private SensorManager mSensorManager;
     private List<Sensor> mSensorList;
     private EventDataList mEventDataList;
@@ -43,7 +47,10 @@ public class SensorReader implements SensorEventListener, FrizzListener {
     private FrizzManager mFrizzManager;
     private boolean mIsSenorsEnabled;
     private boolean mIsHeartRateEnabled;
-    private Lock mLock;
+    private boolean mIsGPSActive;
+    private Lock mProcessLock;
+    private LocationManager mLocationManager;
+
 
 
     private static final String TAG = "SensorReader";
@@ -81,25 +88,32 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     private static final int MAX_CACHE_SIZE = 100000;                                 // when the record count > then call a cache timeout
     private static final long CACHE_TIMOUT = DateUtils.SECOND_IN_MILLIS * 10;         // every ten seconds call a cache timeout
 
+    private static final long LOCATION_MINIMUM_TIME = DateUtils.MINUTE_IN_MILLIS * 10;
+    private static final long LOCATION_MINIMUM_DISTANCE = 5;
+
     public SensorReader(Context context, SensorReaderListener listener) {
         mListener = listener;
         mSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
         mFrizzManager = FrizzManager.getFrizzService(context);
 
+        mProcessLock = new ReentrantLock();
         mEventDataList = new EventDataList();
         loadSensorList();
         mIsActive = true;
         mIsSenorsEnabled = true;
         mIsHeartRateEnabled = true;
-        mLock = new ReentrantLock();
+        mIsGPSActive = true;
+
+        mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+
     }
 
     protected void loadSensorList() {
         mSensorList = new ArrayList<Sensor>();
         SensorList sensorList = new SensorList();
-        for ( int i = 0; i < SENSOR_LOAD_TYPES.length; i ++ ) {
+        for (int i = 0; i < SENSOR_LOAD_TYPES.length; i++) {
             Sensor sensor = mSensorManager.getDefaultSensor(SENSOR_LOAD_TYPES[i]);
-            if ( sensor != null) {
+            if (sensor != null) {
                 sensorList.add(sensor);
                 mSensorList.add(sensor);
             }
@@ -107,19 +121,29 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mFrizzManager.HRBloodParameter(FRIZZ_DEFAULT_BLOOD_PRESURE_MAX, FRIZZ_DEFAULT_BLOOD_PRESURE_MIN);
     }
 
-    public List<Sensor> getSensorList() { return mSensorList; }
+    public List<Sensor> getSensorList() {
+        return mSensorList;
+    }
 
-    public void start() {
+    @SuppressLint("MissingPermission")
+    public void start(Looper looper) {
         mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
-        if ( mIsSenorsEnabled ) {
+        if (mIsSenorsEnabled) {
+            Log.d(TAG, "Sensors Enabled");
             for (int i = 0; i < mSensorList.size(); i++) {
                 mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
             }
         }
-        if ( mIsHeartRateEnabled ) {
+        if (mIsHeartRateEnabled) {
+            Log.d(TAG, "Heart Rate Enabled");
             for (int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i++) {
                 mFrizzManager.registerListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
             }
+        }
+        if (mIsGPSActive) {
+            Log.d(TAG, "GPS Enabled");
+            Criteria criteria = new Criteria();
+            mLocationManager.requestLocationUpdates(LOCATION_MINIMUM_TIME, LOCATION_MINIMUM_DISTANCE, criteria, this, looper);
         }
     }
 
@@ -128,6 +152,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         for ( int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i ++) {
             mFrizzManager.unregisterListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
         }
+        mLocationManager.removeUpdates(this);
     }
 
     public boolean isActive() {
@@ -150,26 +175,26 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     public boolean isHeartRateEnabled() { return mIsHeartRateEnabled;}
     public void setHeartRateEnabled(boolean value) { mIsHeartRateEnabled = value; }
 
-    protected void processCacheFinished() {
-        if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {
-            mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
-            if ( mEventDataList.getItems().size() > 0 ) {
-//                EventDataList distinctList = mEventDataList.getDistinctList();
-//                Log.d(TAG, "Distinct list size = " + distinctList.getItems().size());
+    public boolean isGPSActive() { return mIsGPSActive;}
+    public void setGPSActive(boolean value) { mIsGPSActive = value; }
 
-                if (mListener != null) {
-                    // now try to lock the list for processing
-                    mLock.lock();
-                    try {
+    protected void processCacheFinished() {
+        mProcessLock.lock();
+        // now try to lock  for processing
+        try {
+            if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {
+                mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
+                if ( mEventDataList.getItems().size() > 0 ) {
+                    if (mListener != null) {
                         // send out a copy of the list
                         if (mListener.onCacheFull(mEventDataList.clone())) {
                             mEventDataList.clear();
                         }
-                    } finally {
-                        mLock.unlock();
                     }
                 }
             }
+        } finally {
+            mProcessLock.unlock();
         }
     }
 
@@ -192,6 +217,29 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
             mEventDataList.add(event, System.currentTimeMillis());
         }
         processCacheFinished();
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.d(TAG, location.toString());
+        if ( mIsActive) {
+            mEventDataList.add(location, System.currentTimeMillis());
+        }
+        processCacheFinished();
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
     public interface SensorReaderListener {

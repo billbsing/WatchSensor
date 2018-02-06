@@ -1,28 +1,27 @@
 package com.anantya.watchsensor;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.drm.DrmStore;
+import android.location.Location;
+import android.location.LocationListener;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.NavUtils;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.anantya.watchsensor.cache.EventDataCache;
 import com.anantya.watchsensor.data.ConfigData;
 import com.anantya.watchsensor.data.EventDataStatItem;
-import com.anantya.watchsensor.db.EventDataCacheHelper;
 import com.anantya.watchsensor.jobs.UploadDataJob;
 import com.anantya.watchsensor.libs.BatteryHelper;
-import com.anantya.watchsensor.jobs.MaintenanceJob;
 import com.anantya.watchsensor.libs.WifiHelper;
 import com.anantya.watchsensor.services.EventDataCacheService;
 import com.anantya.watchsensor.services.UploadService;
@@ -59,6 +58,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     private boolean mIsPowered;
 
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,7 +73,6 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
 //        ConfigData.saveToPreference(this, mConfigData);
 
 
-
         // start the main foreground service
         WatchSensorService.start(this);
 
@@ -81,15 +80,16 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         showBatteryStatus(mIsPowered);
 
         // if on power then start up the jobs
-        if ( mIsPowered) {
+        if (mIsPowered) {
 //            UploadDataJob.start(this);
         }
 
         mEventDataStatItem = new EventDataStatItem();
 
-        if ( savedInstanceState != null) {
+        if (savedInstanceState != null) {
             mEventDataStatItem = savedInstanceState.getParcelable(PARAM_EVENT_DATA_STAT);
         }
+
     }
 
     @Override
@@ -100,6 +100,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     }
 
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onStart() {
         super.onStart();
@@ -107,6 +108,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         showStatusFragment();
 
         EventDataCacheService.requestEventDataStats(this);
+
     }
 
 
@@ -155,11 +157,11 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
             @Override
             public void onReceive(Context context, Intent intent) {
                 boolean isPowered = BatteryHelper.isPowered(intent);
-                if ( mIsPowered != isPowered) {
+                if (mIsPowered != isPowered) {
                     showBatteryStatus(isPowered);
                     mIsPowered = isPowered;
                 }
-                if ( mStatusFragment  != null ) {
+                if (mStatusFragment != null) {
                     mStatusFragment.setIsPowered(mIsPowered);
                 }
             }
@@ -173,7 +175,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     }
 
     @Override
-    protected  void onPause() {
+    protected void onPause() {
         super.onPause();
 
         // unregister all broadcasts
@@ -200,7 +202,10 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
         MenuItem item;
+        item = menu.findItem(R.id.action_settings);
+        item.setVisible(fragmentManager.getBackStackEntryCount() == 0);
         item = menu.findItem(R.id.action_upload);
         item.setEnabled(mIsPowered);
         item = menu.findItem(R.id.action_purge);
@@ -215,7 +220,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        switch (id ) {
+        switch (id) {
             case android.R.id.home:
                 backPressed();
                 return true;
@@ -255,6 +260,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     public void onSettingsFragmentDataChange(ConfigData configData) {
         mConfigData = configData;
         ConfigData.saveToPreference(this, configData);
+        WatchSensorService.start(this);
     }
 
     protected void showBatteryStatus(boolean isPluggedIn) {
@@ -264,7 +270,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
                 statusText = getString(R.string.status_sleeping);
             }
             getSupportActionBar().setSubtitle(statusText);
-        } catch ( NullPointerException e) {
+        } catch (NullPointerException e) {
 
         }
     }
@@ -279,7 +285,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
             actionBar.setDisplayHomeAsUpEnabled(false);
 //            actionBar.setHomeButtonEnabled(false);
             actionBar.setTitle(R.string.application_title);
-        } catch ( NullPointerException e) {
+        } catch (NullPointerException e) {
 
         }
     }
@@ -293,29 +299,31 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
             actionBar.setDisplayHomeAsUpEnabled(true);
 //            actionBar.setHomeButtonEnabled(true);
             actionBar.setTitle(R.string.settings_fragment_title);
-        } catch( NullPointerException e) {
+        } catch (NullPointerException e) {
 
         }
     }
+
     protected void assignStatusFragmentValues() {
         String wifiStatus = "Disconnected";
         String batteryStatus = "0%";
-        if( mStatusFragment != null) {
+        if (mStatusFragment != null) {
             batteryStatus = String.format(Locale.UK, "%.0f%%", BatteryHelper.getBatteryPercent(this));
             wifiStatus = WifiHelper.isConnected(this) ? getString(R.string.status_wifi_connected) : getString(R.string.status_wifi_disconnected);
-            mStatusFragment.setValues(mEventDataStatItem,wifiStatus, batteryStatus );
+            mStatusFragment.setValues(mEventDataStatItem, wifiStatus, batteryStatus);
         }
     }
 
     protected void backPressed() {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        if ( fragmentManager.getBackStackEntryCount() > 0 ) {
+        if (fragmentManager.getBackStackEntryCount() > 0) {
             fragmentManager.popBackStack();
         }
         ActionBar actionBar = getSupportActionBar();
         actionBar.setTitle(R.string.application_title);
         actionBar.setDisplayHomeAsUpEnabled(false);
     }
+
 }
 
 

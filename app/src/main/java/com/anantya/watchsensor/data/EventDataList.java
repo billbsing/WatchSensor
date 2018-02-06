@@ -2,6 +2,7 @@ package com.anantya.watchsensor.data;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.location.Location;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -56,6 +57,11 @@ public class EventDataList implements Parcelable {
     }
 
     public EventDataItem add(EventDataItem eventDataItem) {
+        mItems.add(eventDataItem);
+        return eventDataItem;
+    }
+    public EventDataItem add(Location location, long systemTimestamp) {
+        EventDataItem eventDataItem = new EventDataItem(location, systemTimestamp);
         mItems.add(eventDataItem);
         return eventDataItem;
     }

@@ -2,6 +2,7 @@ package com.anantya.watchsensor.data;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
+import android.location.Location;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -118,6 +119,27 @@ public class EventDataItem implements Parcelable {
         mEventTimestamp = sensorEvent.timestamp;
         mSystemTimestamp = systemTimestamp;
         mValues = sensorEvent.values.clone();
+    }
+
+    public EventDataItem(Location location, long systemTimestamp) {
+        mName = "Location";
+        mSystemTimestamp = systemTimestamp;
+        mEventTimestamp = location.getTime();
+        // warning: the CacheData can only save 4 floats !
+        mValues = new float[4];
+        mValues[0] = (float) location.getLatitude();
+        mValues[1] = (float) location.getLongitude();
+        if ( location.hasAltitude()) {
+            mValues[2] = (float) location.getAltitude();
+        }
+        if ( location.hasSpeed()) {
+            mValues[3] = location.getSpeed();
+        }
+/*
+        if ( location.hasBearing()) {
+            mValues[4] = location.getBearing();
+        }
+*/
     }
 
     public void clear() {
