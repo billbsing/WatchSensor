@@ -42,7 +42,6 @@ public class SensorReader implements SensorEventListener, FrizzListener, Locatio
     private List<Sensor> mSensorList;
     private EventDataList mEventDataList;
     private SensorReaderListener mListener;
-    private boolean mIsActive;
     private long mCacheTimeoutTime;
     private FrizzManager mFrizzManager;
     private boolean mIsSenorsEnabled;
@@ -99,7 +98,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mProcessLock = new ReentrantLock();
         mEventDataList = new EventDataList();
         loadSensorList();
-        mIsActive = true;
+//        mIsActive = true;
         mIsSenorsEnabled = true;
         mIsHeartRateEnabled = true;
         mIsGPSActive = true;
@@ -155,18 +154,6 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mLocationManager.removeUpdates(this);
     }
 
-    public boolean isActive() {
-        return mIsActive;
-    }
-
-    public void setActive(boolean value) {
-        if ( mIsActive != value) {
-            if ( mListener != null) {
-                mListener.onActiveChange(value);
-            }
-        }
-        mIsActive = value;
-    }
 
     // these options must be set before the 'start' method is called
     public boolean isSensorsEnabled() { return mIsSenorsEnabled; }
@@ -200,9 +187,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if ( mIsActive ) {
-            mEventDataList.add(event, System.currentTimeMillis());
-        }
+        mEventDataList.add(event, System.currentTimeMillis());
         processCacheFinished();
     }
 
@@ -213,18 +198,14 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     @Override
     public void onFrizzChanged(FrizzEvent event) {
-        if ( mIsActive ) {
-            mEventDataList.add(event, System.currentTimeMillis());
-        }
+        mEventDataList.add(event, System.currentTimeMillis());
         processCacheFinished();
     }
 
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, location.toString());
-        if ( mIsActive) {
-            mEventDataList.add(location, System.currentTimeMillis());
-        }
+        mEventDataList.add(location, System.currentTimeMillis());
         processCacheFinished();
     }
 
@@ -244,7 +225,6 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     public interface SensorReaderListener {
          public boolean onCacheFull(EventDataList eventDataList);
-        public void onActiveChange(boolean isActive);
 
     }
 

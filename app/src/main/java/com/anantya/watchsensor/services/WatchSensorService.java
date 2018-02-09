@@ -43,27 +43,37 @@ public class WatchSensorService extends Service {
     private static final int NOTIFICATION_ID = 101;
     private static final long THREAD_SLEEP_TIME = DateUtils.SECOND_IN_MILLIS * 10;
 
+
     static public void start(Context context) {
         Intent intent = new Intent(context, WatchSensorService.class);
         context.startService(intent);
     }
 
-    private class ServiceProcess implements Runnable, SensorReader.SensorReaderListener {
 
+    private final class ServiceHandler extends Handler implements SensorReader.SensorReaderListener {
+        private BroadcastReceiver mBroadcastBatteryStatus;
         private SensorReader mSensorReader;
+        private String STATE_INIT = "init";
+        private String STATE_READING = "reading";
+        private String STATE_UPLOADING = "upload";
+        private String mState;
+
+
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
         @Override
-        public void run() {
+        public void handleMessage(Message message) {
             try {
+                mState = STATE_INIT;
                 mIsRunning = true;
                 Log.d(TAG, "starting");
+                mStartId = message.arg1;
 
                 mSensorReader = new SensorReader(getBaseContext(), this);
-                // default to always start reading sensors
-                mSensorReader.setActive(true);
-                startReadingSenors();
                 while (mIsRunning) {
                     Thread.sleep(THREAD_SLEEP_TIME);
-                    mSensorReader.setActive(! BatteryHelper.isPowered(getApplicationContext()));
+                    checkState();
                     if ( UploadService.isActive(WatchSensorService.this)) {
                         ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
                         // request an upload
@@ -75,108 +85,31 @@ public class WatchSensorService extends Service {
             }
             Log.d(TAG, "closing");
             stopReadingSensors();
-        }
-
-        @Override
-        public boolean onCacheFull(EventDataList eventDataList) {
-//            Toast.makeText(getBaseContext(), "Cache full", Toast.LENGTH_SHORT).show();
-            Log.d(TAG, "Cache is full");
-            EventDataCacheService.requestEventDataSave(getBaseContext(), eventDataList);
-            return true;
-        }
-
-        @Override
-        public void onActiveChange(boolean isActive) {
-            // get configdata
-            if ( isActive) {
-                startReadingSenors();
-            }
-            else {
-                startUploading();
-            }
-        }
-
-        protected void startReadingSenors() {
-            ConfigData configData = ConfigData.createFromPreference(getApplicationContext());
-            String text = "Sensor reader on";
-            if ( configData.isTrackingEnabled() ) {
-                mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
-                mSensorReader.setHeartRateEnabled(configData.isHeartRateActive());
-                mSensorReader.setGPSActive(configData.isGPSActive());
-                text += " tracking enabled";
-                mSensorReader.start(mServiceLooper);
-            }
-            UploadDataJob.cancel(getApplicationContext());
-            UploadService.setActive(getApplicationContext(), false);
-            Log.d(TAG, text);
-        }
-
-        protected void stopReadingSensors() {
-            mSensorReader.stop();
-        }
-
-        protected void startUploading() {
-            mSensorReader.stop();
-            UploadDataJob.start(getApplicationContext());
-            // set the empty request counter back to 0, so the auto rebuild start checking again
-            UploadService.setEmptyRequestCount(getApplicationContext(), 0);
-            Log.d(TAG, "start uploading");
-        }
-
-    }
-
-    private final class ServiceHandler extends Handler implements SensorReader.SensorReaderListener {
-        private BroadcastReceiver mBroadcastBatteryStatus;
-        private SensorReader mSensorReader;
-
-
-        public ServiceHandler(Looper looper) {
-            super(looper);
-        }
-        @Override
-        public void handleMessage(Message message) {
-            try {
-                mIsRunning = true;
-                Log.d(TAG, "starting");
-                mStartId = message.arg1;
-
-                mSensorReader = new SensorReader(getBaseContext(), this);
-                // default to always start reading sensors
-                startReadingSenors();
-                while (mIsRunning) {
-                    Thread.sleep(THREAD_SLEEP_TIME);
-                    mSensorReader.setActive(! BatteryHelper.isPowered(getApplicationContext()));
-                    if ( UploadService.isActive(WatchSensorService.this)) {
-                        ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
-                        // request an upload
-                        UploadService.requestUpload(WatchSensorService.this, configData);
-                    }
-                }
-            } catch ( InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            Log.d(TAG, "closing");
-            mSensorReader.stop();
+            stopUploading();
             mStartId = 0;
             stopSelf(message.arg1);
         }
 
         @Override
         public boolean onCacheFull(EventDataList eventDataList) {
-//            Toast.makeText(getBaseContext(), "Cache full", Toast.LENGTH_SHORT).show();
             Log.d(TAG, "Cache is full");
             EventDataCacheService.requestEventDataSave(getBaseContext(), eventDataList);
             return true;
         }
 
-        @Override
-        public void onActiveChange(boolean isActive) {
-            // get configdata
-            if ( isActive) {
-                startReadingSenors();
-            }
-            else {
-                startUploading();
+        protected void checkState() {
+            String newState = (BatteryHelper.isPowered(getApplicationContext()) ) ? STATE_UPLOADING : STATE_READING;
+            if ( !mState.equals(newState)) {
+                Log.d(TAG, String.format("State changed from %s, to %s", mState, newState));
+                mState = newState;
+                if ( mState == STATE_READING) {
+                    stopUploading();
+                    startReadingSenors();
+                }
+                else {
+                    stopReadingSensors();
+                    startUploading();
+                }
             }
         }
 
@@ -190,17 +123,24 @@ public class WatchSensorService extends Service {
                 text += " tracking enabled";
                 mSensorReader.start(mServiceLooper);
             }
-            UploadDataJob.cancel(getApplicationContext());
-            UploadService.setActive(getApplicationContext(), false);
+
             Log.d(TAG, text);
         }
 
         protected void startUploading() {
-            mSensorReader.stop();
             UploadDataJob.start(getApplicationContext());
             // set the empty request counter back to 0, so the auto rebuild start checking again
             UploadService.setEmptyRequestCount(getApplicationContext(), 0);
             Log.d(TAG, "start uploading");
+        }
+
+        protected void stopReadingSensors() {
+            mSensorReader.stop();
+        }
+
+        protected void stopUploading() {
+            UploadDataJob.cancel(getApplicationContext());
+            UploadService.setActive(getApplicationContext(), false);
         }
     }
 
@@ -212,11 +152,11 @@ public class WatchSensorService extends Service {
     public void onCreate() {
         super.onCreate();
 
-/*        HandlerThread thread = new HandlerThread("WatchSensorService", Process.THREAD_PRIORITY_BACKGROUND);
+        HandlerThread thread = new HandlerThread("WatchSensorService", Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
         mServiceLooper = thread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper);
-*/
+
         Intent notificationIntent = new Intent(this, HomeActivity.class);
         PendingIntent pendingIntent =
                 PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -237,15 +177,9 @@ public class WatchSensorService extends Service {
         Log.d(TAG, "onStart");
 
         if ( mStartId == 0) {
-            mStartId = startId;
-            mThread = new Thread(new ServiceProcess());
-
-/*
             Message message = mServiceHandler.obtainMessage();
             message.arg1 = startId;
             mServiceHandler.sendMessage(message);
-*/
-
         }
         else {
             Log.d(TAG, "already running");
