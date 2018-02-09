@@ -13,6 +13,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -104,9 +105,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     @Override
     protected void onStart() {
         super.onStart();
-
         showStatusFragment();
-
         EventDataCacheService.requestEventDataStats(this);
 
     }
@@ -202,10 +201,10 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
         MenuItem item;
+        FragmentManager fragmentManager = getSupportFragmentManager();
         item = menu.findItem(R.id.action_settings);
-        item.setVisible(fragmentManager.getBackStackEntryCount() == 0);
+        item.setVisible( fragmentManager.getBackStackEntryCount() == 0 );
         item = menu.findItem(R.id.action_upload);
         item.setEnabled(mIsPowered);
         item = menu.findItem(R.id.action_purge);
@@ -299,6 +298,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
             actionBar.setDisplayHomeAsUpEnabled(true);
 //            actionBar.setHomeButtonEnabled(true);
             actionBar.setTitle(R.string.settings_fragment_title);
+
         } catch (NullPointerException e) {
 
         }
