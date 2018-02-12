@@ -146,16 +146,16 @@ public class WatchSensorService extends Service {
 
         protected void startReadingSenors() {
             ConfigData configData = ConfigData.createFromPreference(getApplicationContext());
-            String text = "Sensor reader on";
             if ( configData.isTrackingEnabled() ) {
+                String text = "Sensor reader on";
                 mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
                 mSensorReader.setHeartRateEnabled(configData.isHeartRateActive());
                 mSensorReader.setGPSActive(configData.isGPSActive());
                 text += " tracking enabled";
                 mSensorReader.start(mServiceLooper);
+                Log.d(TAG, text);
             }
 
-            Log.d(TAG, text);
         }
 
         protected void startUploading() {
@@ -167,11 +167,13 @@ public class WatchSensorService extends Service {
 
         protected void stopReadingSensors() {
             mSensorReader.stop();
+            Log.d(TAG, "stop reading");
         }
 
         protected void stopUploading() {
             UploadDataJob.cancel(getApplicationContext());
             UploadService.setActive(getApplicationContext(), false);
+            Log.d(TAG, "stop uploading");
         }
     }
 
