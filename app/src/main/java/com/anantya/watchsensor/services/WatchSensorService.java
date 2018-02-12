@@ -37,7 +37,6 @@ public class WatchSensorService extends Service {
     private ServiceHandler mServiceHandler;
     private int mStartId;
     private boolean mIsRunning;
-    private Thread mThread;
 
     private static final String TAG = "WatchSensorService";
 
@@ -80,7 +79,7 @@ public class WatchSensorService extends Service {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     boolean isReload = intent.getBooleanExtra(PARAM_SERVICE_RELOAD, false);
-                    Log.d(TAG, "isReload " + isReload);
+                    Log.d(TAG, "reloading requested " + isReload);
                     if ( isReload) {
                         mState = STATE_RELOADING;
                     }
@@ -97,7 +96,8 @@ public class WatchSensorService extends Service {
                 mSensorReader = new SensorReader(getBaseContext(), this);
                 while (mIsRunning) {
                     Thread.sleep(THREAD_SLEEP_TIME);
-                    if ( mState == STATE_RELOADING) {
+                    if ( mState.equals(STATE_RELOADING)) {
+                        Log.d(TAG, "Reloading");
                         stopReadingSensors();
                         stopUploading();
                     }
@@ -114,6 +114,7 @@ public class WatchSensorService extends Service {
             Log.d(TAG, "closing");
             stopReadingSensors();
             stopUploading();
+            broadcastManager.unregisterReceiver(mBroadcastControl);
             mStartId = 0;
             stopSelf(message.arg1);
         }
