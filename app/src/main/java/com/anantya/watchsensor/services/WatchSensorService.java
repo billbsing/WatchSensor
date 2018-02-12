@@ -87,29 +87,30 @@ public class WatchSensorService extends Service {
             };
             broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_RELOAD));
 
-            try {
-                mState = STATE_INIT;
-                mIsRunning = true;
-                Log.d(TAG, "starting");
-                mStartId = message.arg1;
+            mState = STATE_INIT;
+            mIsRunning = true;
+            Log.d(TAG, "starting");
+            mStartId = message.arg1;
 
-                mSensorReader = new SensorReader(getBaseContext(), this);
-                while (mIsRunning) {
+            mSensorReader = new SensorReader(getBaseContext(), this);
+            while (mIsRunning) {
+                try {
                     Thread.sleep(THREAD_SLEEP_TIME);
-                    if ( mState.equals(STATE_RELOADING)) {
-                        Log.d(TAG, "Reloading");
-                        stopReadingSensors();
-                        stopUploading();
-                    }
-                    checkState();
-                    if ( UploadService.isActive(WatchSensorService.this)) {
-                        ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
-                        // request an upload
-                        UploadService.requestUpload(WatchSensorService.this, configData);
-                    }
+                } catch ( InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    mIsRunning = false;
                 }
-            } catch ( InterruptedException e) {
-                Thread.currentThread().interrupt();
+                if ( mState.equals(STATE_RELOADING)) {
+                    Log.d(TAG, "Reloading");
+                    stopReadingSensors();
+                    stopUploading();
+                }
+                checkState();
+                if ( UploadService.isActive(WatchSensorService.this)) {
+                    ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
+                    // request an upload
+                    UploadService.requestUpload(WatchSensorService.this, configData);
+                }
             }
             Log.d(TAG, "closing");
             stopReadingSensors();
