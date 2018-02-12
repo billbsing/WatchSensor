@@ -131,7 +131,7 @@ public class WatchSensorService extends Service {
             if ( ! mState.equals(newState)) {
                 Log.d(TAG, String.format("State changed from %s, to %s", mState, newState));
                 mState = newState;
-                if ( mState == STATE_READING) {
+                if ( mState.equals(STATE_READING)) {
                     stopUploading();
                     startReadingSenors();
                 }
