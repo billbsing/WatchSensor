@@ -259,7 +259,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     public void onSettingsFragmentDataChange(ConfigData configData) {
         mConfigData = configData;
         ConfigData.saveToPreference(this, configData);
-        WatchSensorService.start(this);
+        WatchSensorService.requestReload(this);
     }
 
     protected void showBatteryStatus(boolean isPluggedIn) {

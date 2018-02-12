@@ -17,6 +17,7 @@ import android.os.Process;
 import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
 import android.util.Log;
 
@@ -42,20 +43,28 @@ public class WatchSensorService extends Service {
 
     private static final int NOTIFICATION_ID = 101;
     private static final long THREAD_SLEEP_TIME = DateUtils.SECOND_IN_MILLIS * 10;
-
+    private static final String PARAM_SERVICE_RELOAD = "WatchSensorService.reload";
+    private static final String ON_ACTION_RELOAD = "WatchSensorService.on_action_reload";
 
     static public void start(Context context) {
         Intent intent = new Intent(context, WatchSensorService.class);
         context.startService(intent);
     }
 
+    static public void requestReload(Context context) {
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(context);
+        Intent intent = new Intent(ON_ACTION_RELOAD);
+        intent.putExtra(PARAM_SERVICE_RELOAD, true);
+        broadcastManager.sendBroadcast(intent);
+    }
 
     private final class ServiceHandler extends Handler implements SensorReader.SensorReaderListener {
-        private BroadcastReceiver mBroadcastBatteryStatus;
+        private BroadcastReceiver mBroadcastControl;
         private SensorReader mSensorReader;
         private String STATE_INIT = "init";
         private String STATE_READING = "reading";
         private String STATE_UPLOADING = "upload";
+        private String STATE_RELOADING = "reload";
         private String mState;
 
 
@@ -64,6 +73,21 @@ public class WatchSensorService extends Service {
         }
         @Override
         public void handleMessage(Message message) {
+            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
+
+            // get any change to the event data cache
+            mBroadcastControl = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    boolean isReload = intent.getBooleanExtra(PARAM_SERVICE_RELOAD, false);
+                    Log.d(TAG, "isReload " + isReload);
+                    if ( isReload) {
+                        mState = STATE_RELOADING;
+                    }
+                }
+            };
+            broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_RELOAD));
+
             try {
                 mState = STATE_INIT;
                 mIsRunning = true;
@@ -73,6 +97,10 @@ public class WatchSensorService extends Service {
                 mSensorReader = new SensorReader(getBaseContext(), this);
                 while (mIsRunning) {
                     Thread.sleep(THREAD_SLEEP_TIME);
+                    if ( mState == STATE_RELOADING) {
+                        stopReadingSensors();
+                        stopUploading();
+                    }
                     checkState();
                     if ( UploadService.isActive(WatchSensorService.this)) {
                         ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
@@ -99,7 +127,7 @@ public class WatchSensorService extends Service {
 
         protected void checkState() {
             String newState = (BatteryHelper.isPowered(getApplicationContext()) ) ? STATE_UPLOADING : STATE_READING;
-            if ( !mState.equals(newState)) {
+            if ( ! mState.equals(newState)) {
                 Log.d(TAG, String.format("State changed from %s, to %s", mState, newState));
                 mState = newState;
                 if ( mState == STATE_READING) {
