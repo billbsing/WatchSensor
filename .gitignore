@@ -44,13 +44,13 @@ captures/
 
 # IntelliJ
 *.iml
-/.idea/workspace.xml
-/.idea/tasks.xml
-/.idea/gradle.xml
-/.idea/dictionaries
-/.idea/libraries
-/.idea/modules.xml
-/.idea/misc.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/dictionaries
+.idea/libraries
+.idea/modules.xml
+.idea/misc.xml
 
 
 # Keystore files

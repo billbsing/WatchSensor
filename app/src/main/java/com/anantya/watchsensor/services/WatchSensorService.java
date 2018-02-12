@@ -44,6 +44,11 @@ public class WatchSensorService extends Service {
     private static final long THREAD_SLEEP_TIME = DateUtils.SECOND_IN_MILLIS * 10;
     private static final String PARAM_SERVICE_RELOAD = "WatchSensorService.reload";
     private static final String ON_ACTION_RELOAD = "WatchSensorService.on_action_reload";
+    private static final String STATE_INIT = "init";
+    private static final String STATE_READING = "reading";
+    private static final String STATE_UPLOADING = "upload";
+    private static final String STATE_RELOADING = "reload";
+
 
     static public void start(Context context) {
         Intent intent = new Intent(context, WatchSensorService.class);
@@ -60,10 +65,6 @@ public class WatchSensorService extends Service {
     private final class ServiceHandler extends Handler implements SensorReader.SensorReaderListener {
         private BroadcastReceiver mBroadcastControl;
         private SensorReader mSensorReader;
-        private String STATE_INIT = "init";
-        private String STATE_READING = "reading";
-        private String STATE_UPLOADING = "upload";
-        private String STATE_RELOADING = "reload";
         private String mState;
 
 
