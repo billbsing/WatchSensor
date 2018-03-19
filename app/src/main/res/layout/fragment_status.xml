@@ -27,15 +27,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/status_fragment_wifi"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewWifiStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:text="@string/status_fragment_wifi_default_value"
                         android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
                 </TableRow>
 
                 <TableRow
@@ -47,16 +48,18 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/status_fragment_battery"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewBatteryStatus"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="right"
+                        android:layout_marginLeft="@dimen/cell_margin"
                         android:layout_weight="1"
-                        android:text="0%"
+                        android:text="@string/status_fragment_battery_default_value"
                         android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                 </TableRow>
 
@@ -70,7 +73,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/status_fragment_total"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewTotalStats"
@@ -79,9 +82,9 @@
                         android:layout_gravity="right"
                         android:layout_marginLeft="@dimen/cell_margin"
                         android:layout_weight="1"
-                        android:text="0"
+                        android:text="@string/status_fragment_total_default_value"
                         android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
                 </TableRow>
 
                 <TableRow
@@ -94,7 +97,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/status_fragment_waiting"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewUploadWait"
@@ -103,9 +106,9 @@
                         android:layout_gravity="right"
                         android:layout_marginLeft="@dimen/cell_margin"
                         android:layout_weight="1"
-                        android:text="0"
+                        android:text="@string/status_fragment_waiting_default_value"
                         android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
                 </TableRow>
 
                 <TableRow
@@ -118,7 +121,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/status_fragment_retrying"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewUploadProcessing"
@@ -127,9 +130,9 @@
                         android:layout_gravity="right"
                         android:layout_marginLeft="@dimen/cell_margin"
                         android:layout_weight="1"
-                        android:text="0"
+                        android:text="@string/status_fragment_retrying_default_value"
                         android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                 </TableRow>
 
@@ -143,7 +146,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/status_fragment_uploaded"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewUploadDone"
@@ -152,9 +155,9 @@
                         android:layout_gravity="right"
                         android:layout_marginLeft="@dimen/cell_margin"
                         android:layout_weight="1"
-                        android:text="0"
+                        android:text="@string/status_fragment_uploaded_default_value"
                         android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                 </TableRow>
 
@@ -167,16 +170,15 @@
                         android:id="@+id/textViewInfomationTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Info"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:text="@string/status_fragment_info"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
 
                     <TextView
                         android:id="@+id/textViewInformation"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textAlignment="textEnd"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
                 </TableRow>
 
                 <TableRow
@@ -185,12 +187,12 @@
 
                     <TextView
                         android:id="@+id/textViewPercentDone"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="0%"
                         android:textAlignment="center"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
                 </TableRow>
 
             </TableLayout>

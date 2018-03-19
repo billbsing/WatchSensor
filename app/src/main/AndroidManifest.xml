@@ -29,24 +29,21 @@
         <service
             android:name=".services.EventDataCacheService"
             android:exported="false" />
-
         <service
             android:name=".services.NetworkDiscoverService"
             android:exported="false" />
-
         <service
             android:name=".services.WatchSensorService"
             android:enabled="true"
             android:exported="true" />
-
         <service
             android:name=".services.UploadService"
-            android:exported="false"/>
-
-        <service android:name=".jobs.MaintenanceJob"
+            android:exported="false" />
+        <service
+            android:name=".jobs.MaintenanceJob"
             android:permission="android.permission.BIND_JOB_SERVICE" />
-
-        <service android:name=".jobs.UploadDataJob"
+        <service
+            android:name=".jobs.UploadDataJob"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
         <receiver

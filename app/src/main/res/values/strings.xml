@@ -11,12 +11,20 @@
 
     <!-- UI -->
     <string name="status_fragment_wifi">Wifi</string>
+    <string name="status_fragment_wifi_default_value"></string>
     <string name="status_fragment_battery">Battery</string>
+    <string name="status_fragment_battery_default_value">0%</string>
     <string name="status_fragment_total">Total</string>
+    <string name="status_fragment_total_default_value">0</string>
     <string name="status_fragment_waiting">Waiting</string>
+    <string name="status_fragment_waiting_default_value">0</string>
     <string name="status_fragment_recorded">Recorded</string>
+    <string name="status_fragment_recorded_default_value">0</string>
     <string name="status_fragment_retrying">Queued</string>
+    <string name="status_fragment_retrying_default_value">0</string>
     <string name="status_fragment_uploaded">Uploaded</string>
+    <string name="status_fragment_uploaded_default_value">0</string>
+    <string name="status_fragment_info">Info</string>
 
 
     <string name="settings_fragment_title">Settings</string>
@@ -42,5 +50,43 @@
     <string name="notification_text">Touch here to view and change settings"</string>
 
 
+    <string name="title_activity_settings">Settings</string>
 
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <!-- Preferences Screen -->
+    <string name="preference_group_data_title">Connection Information</string>
+    <string name="preference_watch_id_title">Watch ID</string>
+
+    <string name="preference_group_sensor_title">Sensors</string>
+    <string name="preference_tracking_enabled_title">Tracking Enabled</string>
+    <string name="preference_gps_enabled">GPS Enabled</string>
+
+    <string name="preference_heart_rate_title">Heart Rate Frequency</string>
+    <string-array name="preference_heart_rate_options">
+        <item>Disabled</item>
+        <item>Continuous</item>
+        <item>1 minute</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>30 Minutes</item>
+        <item>1 Hour</item>
+        <item>2 Hours</item>
+    </string-array>
+    <string-array name="preference_heart_rate_values">
+        <item>-1</item>
+        <item>0</item>
+        <item>60</item>
+        <item>300</item>
+        <item>600</item>
+        <item>900</item>
+        <item>1800</item>
+        <item>6000</item>
+        <item>12000</item>
+    </string-array>
+    <string name="preference_heart_rate_default">0</string>
+
+    <string name="preference_group_version">Version</string>
 </resources>

@@ -129,6 +129,10 @@ public class WatchSensorService extends Service {
         }
 
         protected void checkState() {
+            // call sensor reader to turn on/off sensors for a period of time
+            mSensorReader.checkDelayReading();
+
+            // check to see if the watch has power?
             String newState = (BatteryHelper.isPowered(getApplicationContext()) ) ? STATE_UPLOADING : STATE_READING;
             if ( ! mState.equals(newState)) {
                 Log.d(TAG, String.format("State changed from %s, to %s", mState, newState));
@@ -149,7 +153,7 @@ public class WatchSensorService extends Service {
             if ( configData.isTrackingEnabled() ) {
                 String text = "Sensor reader on";
                 mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
-                mSensorReader.setHeartRateEnabled(configData.isHeartRateActive());
+                mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
                 mSensorReader.setGPSActive(configData.isGPSActive());
                 text += " tracking enabled";
                 mSensorReader.start(mServiceLooper);

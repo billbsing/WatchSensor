@@ -14,6 +14,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.text.format.DateUtils;
@@ -37,6 +38,7 @@ import jp.megachips.frizzservice.FrizzManager;
  */
 
 
+
 public class SensorReader implements SensorEventListener, FrizzListener, LocationListener {
     private SensorManager mSensorManager;
     private List<Sensor> mSensorList;
@@ -44,15 +46,16 @@ public class SensorReader implements SensorEventListener, FrizzListener, Locatio
     private SensorReaderListener mListener;
     private long mCacheTimeoutTime;
     private FrizzManager mFrizzManager;
-    private boolean mIsSenorsEnabled;
-    private boolean mIsHeartRateEnabled;
-    private boolean mIsGPSActive;
+    private SensorFrequency mSensorFrequency;
+    private SensorFrequency mGPSFrequency;
+    private SensorFrequency mHeartRateFrequency;
     private Lock mProcessLock;
     private LocationManager mLocationManager;
 
 
 
     private static final String TAG = "SensorReader";
+
 /*
 
 Accelerometer, SENSOR_DELAY_FASTEST: 18-20 ms
@@ -98,10 +101,12 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mProcessLock = new ReentrantLock();
         mEventDataList = new EventDataList();
         loadSensorList();
-//        mIsActive = true;
-        mIsSenorsEnabled = true;
-        mIsHeartRateEnabled = true;
-        mIsGPSActive = true;
+
+        // by default activate all sensors for reading
+        mSensorFrequency = new SensorFrequency(true);
+        mHeartRateFrequency = new SensorFrequency(true);
+        mGPSFrequency = new SensorFrequency(true);
+
 
         mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
@@ -127,19 +132,18 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     @SuppressLint("MissingPermission")
     public void start(Looper looper) {
         mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
-        if (mIsSenorsEnabled) {
+        if (mSensorFrequency.isActive()) {
             Log.d(TAG, "Sensors Enabled");
             for (int i = 0; i < mSensorList.size(); i++) {
                 mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
             }
         }
-        if (mIsHeartRateEnabled) {
+        if (mHeartRateFrequency.isActive()) {
             Log.d(TAG, "Heart Rate Enabled");
-            for (int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i++) {
-                mFrizzManager.registerListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
-            }
+            heartRateStart();
+            mHeartRateFrequency.startReading();
         }
-        if (mIsGPSActive) {
+        if (mGPSFrequency.isActive()) {
             Log.d(TAG, "GPS Enabled");
             Criteria criteria = new Criteria();
             mLocationManager.requestLocationUpdates(LOCATION_MINIMUM_TIME, LOCATION_MINIMUM_DISTANCE, criteria, this, looper);
@@ -148,22 +152,36 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     public void stop() {
         mSensorManager.unregisterListener(this);
-        for ( int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i ++) {
-            mFrizzManager.unregisterListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
-        }
+        heartRateStop();
+        mHeartRateFrequency.stop();
         mLocationManager.removeUpdates(this);
+
     }
 
+    public void checkDelayReading() {
+        // only heart rate can be turned on/off for delay reads
+        if ( mHeartRateFrequency.isActive()) {
+            if ( mHeartRateFrequency.isReadingFinished()) {
+                heartRateStop();
+                mHeartRateFrequency.stopReading();
+            }
+            if ( mHeartRateFrequency.isDelayFinished() ) {
+                heartRateStart();
+                mHeartRateFrequency.startReading();
+            }
+        }
+
+    }
 
     // these options must be set before the 'start' method is called
-    public boolean isSensorsEnabled() { return mIsSenorsEnabled; }
-    public void setSenorsEnabled(boolean value) { mIsSenorsEnabled = value; }
+    public boolean isSensorsEnabled() { return mSensorFrequency.isActive(); }
+    public void setSenorsEnabled(boolean value) { mSensorFrequency.setActive(value); }
 
-    public boolean isHeartRateEnabled() { return mIsHeartRateEnabled;}
-    public void setHeartRateEnabled(boolean value) { mIsHeartRateEnabled = value; }
+    public void setHeartRateFrequency(int readSeconds, int delaySeconds) { mHeartRateFrequency.setFrequency(readSeconds, delaySeconds); }
 
-    public boolean isGPSActive() { return mIsGPSActive;}
-    public void setGPSActive(boolean value) { mIsGPSActive = value; }
+    public boolean isGPSActive() { return mGPSFrequency.isActive();}
+    public void setGPSActive(boolean value) { mGPSFrequency.setActive(value); }
+
 
     protected void processCacheFinished() {
         mProcessLock.lock();
@@ -185,6 +203,19 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         }
     }
 
+    protected void heartRateStart() {
+        Log.d(TAG, "Heart rate start reading");
+        for (int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i++) {
+            mFrizzManager.registerListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
+        }
+    }
+
+    protected void heartRateStop() {
+        Log.d(TAG, "Heart rate stop reading");
+        for ( int i = 0; i < FRIZZ_SENSOR_LOAD_TYPES.length; i ++) {
+            mFrizzManager.unregisterListener(this, FRIZZ_SENSOR_LOAD_TYPES[i]);
+        }
+    }
     @Override
     public void onSensorChanged(SensorEvent event) {
         mEventDataList.add(event, System.currentTimeMillis());

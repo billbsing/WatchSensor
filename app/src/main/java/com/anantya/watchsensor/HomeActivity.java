@@ -1,19 +1,16 @@
 package com.anantya.watchsensor;
 
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.Activity;
+import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.location.Location;
-import android.location.LocationListener;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.LayoutInflater;
+import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -36,10 +33,9 @@ import java.util.Locale;
     Product: G9
 
 
-
  */
 
-public class HomeActivity extends AppCompatActivity  implements SettingsFragment.OnSettingsFragmentListener {
+public class HomeActivity extends Activity {
 
     private static final String TAG = "HomeActivity";
 
@@ -72,6 +68,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         mConfigData = ConfigData.createFromPreference(this);
 
 //        ConfigData.saveToPreference(this, mConfigData);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences_screen, false);
 
 
         // start the main foreground service
@@ -134,7 +131,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
         mBroadcastOnUploadStart = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                getSupportActionBar().setSubtitle("Uploading");
+                getActionBar().setSubtitle("Uploading");
             }
         };
 
@@ -202,7 +199,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem item;
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentManager fragmentManager = getFragmentManager();
         item = menu.findItem(R.id.action_settings);
         item.setVisible( fragmentManager.getBackStackEntryCount() == 0 );
         item = menu.findItem(R.id.action_upload);
@@ -224,6 +221,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
                 backPressed();
                 return true;
             case R.id.action_settings:
+
                 showSettingsFragment();
                 return true;
             case R.id.action_upload:
@@ -255,12 +253,6 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
 
     }
 
-    @Override
-    public void onSettingsFragmentDataChange(ConfigData configData) {
-        mConfigData = configData;
-        ConfigData.saveToPreference(this, configData);
-        WatchSensorService.requestReload(this);
-    }
 
     protected void showBatteryStatus(boolean isPluggedIn) {
         try {
@@ -268,7 +260,7 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
             if (isPluggedIn) {
                 statusText = getString(R.string.status_sleeping);
             }
-            getSupportActionBar().setSubtitle(statusText);
+            getActionBar().setSubtitle(statusText);
         } catch (NullPointerException e) {
 
         }
@@ -277,12 +269,11 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
 
     protected void showStatusFragment() {
         mStatusFragment = StatusFragment.newInstance();
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.fragmentContainer, mStatusFragment).commit();
         try {
-            ActionBar actionBar = getSupportActionBar();
+            ActionBar actionBar = getActionBar();
             actionBar.setDisplayHomeAsUpEnabled(false);
-//            actionBar.setHomeButtonEnabled(false);
             actionBar.setTitle(R.string.application_title);
         } catch (NullPointerException e) {
 
@@ -291,12 +282,16 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
 
     protected void showSettingsFragment() {
         mSettingsFragment = SettingsFragment.newInstance(mConfigData);
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().add(R.id.fragmentContainer, mSettingsFragment).addToBackStack("settings").commit();
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager
+                .beginTransaction()
+                .add(R.id.fragmentContainer,  mSettingsFragment)
+                .addToBackStack("settings")
+                .hide(mStatusFragment)
+                .commit();
         try {
-            ActionBar actionBar = getSupportActionBar();
+            ActionBar actionBar = getActionBar();
             actionBar.setDisplayHomeAsUpEnabled(true);
-//            actionBar.setHomeButtonEnabled(true);
             actionBar.setTitle(R.string.settings_fragment_title);
 
         } catch (NullPointerException e) {
@@ -315,11 +310,12 @@ public class HomeActivity extends AppCompatActivity  implements SettingsFragment
     }
 
     protected void backPressed() {
-        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentManager fragmentManager = getFragmentManager();
         if (fragmentManager.getBackStackEntryCount() > 0) {
             fragmentManager.popBackStack();
+            fragmentManager.beginTransaction().show(mStatusFragment).commit();
         }
-        ActionBar actionBar = getSupportActionBar();
+        ActionBar actionBar = getActionBar();
         actionBar.setTitle(R.string.application_title);
         actionBar.setDisplayHomeAsUpEnabled(false);
     }
