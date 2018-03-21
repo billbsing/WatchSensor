@@ -114,7 +114,7 @@ public class StatusFragment extends Fragment {
             view.findViewById(R.id.tableRowRetry).setVisibility(value ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.tableRowUpload).setVisibility(value ? View.VISIBLE : View.GONE);
 //            view.findViewById(R.id.tableRowInformation).setVisibility(value ? View.GONE : View.VISIBLE);
-            view.findViewById(R.id.tableRowInformation).setVisibility( View.VISIBLE);
+            view.findViewById(R.id.tableRowInformation).setVisibility( View.GONE);
         }
 
         if ( value ) {

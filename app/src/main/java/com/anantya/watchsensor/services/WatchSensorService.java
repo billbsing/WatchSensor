@@ -25,6 +25,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.anantya.watchsensor.HomeActivity;
 import com.anantya.watchsensor.R;
@@ -58,7 +59,7 @@ public class WatchSensorService extends Service {
     private static final String STATE_UPLOADING = "upload";
     private static final String STATE_RELOADING = "reload";
 
-    public static final String ON_EVENT_LOCATION_FOUND = "WatchSensorService.on_event_location_found";
+    public static final String ON_EVENT_LOCATION = "WatchSensorService.on_event_location";
     public static final String PARAM_LOCATION = "WatchSensorService.param_location";
     public static final String PARAM_SECONDS_LOCATION = "WatchSensorService.param_seconds_location";
 
@@ -80,7 +81,6 @@ public class WatchSensorService extends Service {
         private SensorReader mSensorReader;
         private String mState;
         private Date mLastLocationTime;
-
 
 
         public ServiceHandler(Looper looper) {
@@ -108,7 +108,7 @@ public class WatchSensorService extends Service {
             Log.d(TAG, "starting");
             mStartId = message.arg1;
 
-            mSensorReader = new SensorReader(getBaseContext(), this);
+            mSensorReader = new SensorReader(WatchSensorService.this, this);
             while (mIsRunning) {
                 try {
                     Thread.sleep(THREAD_SLEEP_TIME);
@@ -152,11 +152,7 @@ public class WatchSensorService extends Service {
                 secondsSinceLastRead = now.getTime() - mLastLocationTime.getTime();
             }
             mLastLocationTime = now;
-            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
-            Intent intent = new Intent(ON_EVENT_LOCATION_FOUND);
-            intent.putExtra(PARAM_LOCATION, location);
-            intent.putExtra(PARAM_SECONDS_LOCATION, secondsSinceLastRead);
-            broadcastManager.sendBroadcast(intent);
+            raiseOnLocationEevnt(location, secondsSinceLastRead);
         }
 
         protected void checkState() {
@@ -186,7 +182,8 @@ public class WatchSensorService extends Service {
             mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
             Log.d(TAG, "GPS " + configData.isGPSEnabled());
             mSensorReader.setGPSEnabled(configData.isGPSEnabled());
-            mSensorReader.start(getMainLooper());
+            mSensorReader.start(mServiceLooper);
+            raiseOnLocationEevnt(null, -1);
             Log.d(TAG, text);
         }
 
@@ -206,6 +203,17 @@ public class WatchSensorService extends Service {
             UploadDataJob.cancel(getApplicationContext());
             UploadService.setActive(getApplicationContext(), false);
             Log.d(TAG, "stop uploading");
+        }
+
+        protected void raiseOnLocationEevnt(Location location, long secondsSinceLastRead) {
+            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
+            Intent intent = new Intent(ON_EVENT_LOCATION);
+            if ( location != null) {
+                intent.putExtra(PARAM_LOCATION, location);
+            }
+            intent.putExtra(PARAM_SECONDS_LOCATION, secondsSinceLastRead);
+            broadcastManager.sendBroadcast(intent);
+//            Toast.makeText(WatchSensorService.this, "Location", Toast.LENGTH_SHORT).show();
         }
     }
 

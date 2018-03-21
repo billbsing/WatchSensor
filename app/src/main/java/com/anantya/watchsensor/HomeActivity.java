@@ -54,9 +54,7 @@ public class HomeActivity extends Activity {
     private BroadcastReceiver mBroadcastOnUploadStart;
     private BroadcastReceiver mBroadcastOnUploadDone;
     private BroadcastReceiver mBroadcastBatteryStatus;
-    private BroadcastReceiver mBroadcastOnLocationFound;
-    private LocationListener mLocationListener;
-    private Date mLastLocationTime;
+    private BroadcastReceiver mBroadcastOnLocation;
 
 
     private ConfigData mConfigData;
@@ -174,16 +172,26 @@ public class HomeActivity extends Activity {
         };
         registerReceiver(mBroadcastBatteryStatus, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
-        mBroadcastOnLocationFound = new BroadcastReceiver() {
+        mBroadcastOnLocation = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                long secondsSinceLastLocationRead = intent.getLongExtra(WatchSensorService.PARAM_SECONDS_LOCATION, 0);
+
+                if ( secondsSinceLastLocationRead >= 0 ) {
+                    Toast.makeText(HomeActivity.this, "Location "+ secondsSinceLastLocationRead, Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    Toast.makeText(HomeActivity.this, "GPS Active", Toast.LENGTH_LONG).show();
+                }
+                /*
                 if ( mStatusFragment != null) {
                     long secondsSinceLastLocionRead = intent.getLongExtra(WatchSensorService.PARAM_SECONDS_LOCATION, 0);
                     mStatusFragment.setInformation(String.format(Locale.UK, "%d seconds location", secondsSinceLastLocionRead));
-                }
+               }
+*/
             }
         };
-        registerReceiver(mBroadcastOnLocationFound, new IntentFilter(WatchSensorService.ON_EVENT_LOCATION_FOUND));
+        registerReceiver(mBroadcastOnLocation, new IntentFilter(WatchSensorService.ON_EVENT_LOCATION));
 
         EventDataCacheService.requestEventDataStats(this);
 
@@ -200,7 +208,7 @@ public class HomeActivity extends Activity {
         broadcastManager.unregisterReceiver(mBroadcastOnEventDataCacheActionDone);
         broadcastManager.unregisterReceiver(mBroadcastOnUploadStart);
         broadcastManager.unregisterReceiver(mBroadcastOnUploadDone);
-        broadcastManager.unregisterReceiver(mBroadcastOnLocationFound);
+        broadcastManager.unregisterReceiver(mBroadcastOnLocation);
         unregisterReceiver(mBroadcastBatteryStatus);
 
 //        NetworkDiscoverService.stopListen(this);

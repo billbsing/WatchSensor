@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.text.format.DateUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.anantya.watchsensor.data.EventDataList;
 import com.anantya.watchsensor.data.SensorList;
@@ -241,9 +242,9 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.d(TAG, "Location " + location.toString());
         mProcessLock.lock();
         try {
-            Log.d(TAG, location.toString());
             mEventDataList.add(location, System.currentTimeMillis());
             processCacheFinished();
         } finally {
