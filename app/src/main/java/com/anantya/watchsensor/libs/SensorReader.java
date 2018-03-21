@@ -2,6 +2,7 @@ package com.anantya.watchsensor.libs;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
@@ -90,15 +91,15 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     private static final int MAX_CACHE_SIZE = 100000;                                 // when the record count > then call a cache timeout
     private static final long CACHE_TIMOUT = DateUtils.SECOND_IN_MILLIS * 10;         // every ten seconds call a cache timeout
 
-    private static final long LOCATION_MINIMUM_TIME = DateUtils.MINUTE_IN_MILLIS * 10;
-    private static final long LOCATION_MINIMUM_DISTANCE = 5;
+    private static final long LOCATION_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 10;
+    private static final long LOCATION_MINIMUM_DISTANCE = 1;
 
     public SensorReader(Context context, SensorReaderListener listener) {
         mListener = listener;
+        mProcessLock = new ReentrantLock();
         mSensorManager = (SensorManager) context.getSystemService(context.SENSOR_SERVICE);
         mFrizzManager = FrizzManager.getFrizzService(context);
 
-        mProcessLock = new ReentrantLock();
         mEventDataList = new EventDataList();
         loadSensorList();
 
@@ -132,21 +133,23 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     @SuppressLint("MissingPermission")
     public void start(Looper looper) {
         mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
-        if (mSensorFrequency.isActive()) {
+        if (mSensorFrequency.isEnabled()) {
             Log.d(TAG, "Sensors Enabled");
             for (int i = 0; i < mSensorList.size(); i++) {
                 mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
             }
         }
-        if (mHeartRateFrequency.isActive()) {
+        if (mHeartRateFrequency.isEnabled()) {
             Log.d(TAG, "Heart Rate Enabled");
             heartRateStart();
             mHeartRateFrequency.startReading();
         }
-        if (mGPSFrequency.isActive()) {
-            Log.d(TAG, "GPS Enabled");
+        if (mGPSFrequency.isEnabled()) {
+            Log.d(TAG, "GPS Requested");
             Criteria criteria = new Criteria();
+            criteria.setAccuracy(Criteria.ACCURACY_COARSE);
             mLocationManager.requestLocationUpdates(LOCATION_MINIMUM_TIME, LOCATION_MINIMUM_DISTANCE, criteria, this, looper);
+//            mLocationManager.requestSingleUpdate(criteria, this, looper);
         }
     }
 
@@ -155,12 +158,11 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         heartRateStop();
         mHeartRateFrequency.stop();
         mLocationManager.removeUpdates(this);
-
     }
 
     public void checkDelayReading() {
         // only heart rate can be turned on/off for delay reads
-        if ( mHeartRateFrequency.isActive()) {
+        if ( mHeartRateFrequency.isEnabled()) {
             if ( mHeartRateFrequency.isReadingFinished()) {
                 heartRateStop();
                 mHeartRateFrequency.stopReading();
@@ -174,32 +176,26 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     }
 
     // these options must be set before the 'start' method is called
-    public boolean isSensorsEnabled() { return mSensorFrequency.isActive(); }
-    public void setSenorsEnabled(boolean value) { mSensorFrequency.setActive(value); }
+    public boolean isSensorsEnabled() { return mSensorFrequency.isEnabled(); }
+    public void setSenorsEnabled(boolean value) { mSensorFrequency.setEnabled(value); }
 
     public void setHeartRateFrequency(int readSeconds, int delaySeconds) { mHeartRateFrequency.setFrequency(readSeconds, delaySeconds); }
 
-    public boolean isGPSActive() { return mGPSFrequency.isActive();}
-    public void setGPSActive(boolean value) { mGPSFrequency.setActive(value); }
+    public boolean isGPSEnabled() { return mGPSFrequency.isEnabled();}
+    public void setGPSEnabled(boolean value) { mGPSFrequency.setEnabled(value); }
 
 
-    protected void processCacheFinished() {
-        mProcessLock.lock();
-        // now try to lock  for processing
-        try {
-            if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {
-                mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
-                if ( mEventDataList.getItems().size() > 0 ) {
-                    if (mListener != null) {
-                        // send out a copy of the list
-                        if (mListener.onCacheFull(mEventDataList.clone())) {
-                            mEventDataList.clear();
-                        }
-                    }
+    protected synchronized void processCacheFinished() {
+        if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {
+            mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
+            if ( mEventDataList.getItems().size() > 0 ) {
+                EventDataList userEventDataList = mEventDataList.clone();
+                if (mListener != null) {
+                    // send out a copy of the list
+                    mListener.onCacheFull(userEventDataList);
                 }
+                mEventDataList.clear();
             }
-        } finally {
-            mProcessLock.unlock();
         }
     }
 
@@ -218,8 +214,13 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     }
     @Override
     public void onSensorChanged(SensorEvent event) {
-        mEventDataList.add(event, System.currentTimeMillis());
-        processCacheFinished();
+        mProcessLock.lock();
+        try {
+            mEventDataList.add(event, System.currentTimeMillis());
+            processCacheFinished();
+        } finally {
+            mProcessLock.unlock();
+        }
     }
 
     @Override
@@ -229,24 +230,38 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     @Override
     public void onFrizzChanged(FrizzEvent event) {
-        mEventDataList.add(event, System.currentTimeMillis());
-        processCacheFinished();
+        mProcessLock.lock();
+        try {
+            mEventDataList.add(event, System.currentTimeMillis());
+            processCacheFinished();
+        } finally {
+            mProcessLock.unlock();
+        }
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, location.toString());
-        mEventDataList.add(location, System.currentTimeMillis());
-        processCacheFinished();
+        mProcessLock.lock();
+        try {
+            Log.d(TAG, location.toString());
+            mEventDataList.add(location, System.currentTimeMillis());
+            processCacheFinished();
+        } finally {
+            mProcessLock.unlock();
+        }
+        if ( mListener != null) {
+            mListener.onLocationChange(location);
+        }
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
+        Log.d(TAG, "Provider status changed " + provider);
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-
+        Log.d(TAG, "Provider enabled " + provider);
     }
 
     @Override
@@ -256,7 +271,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     public interface SensorReaderListener {
          public boolean onCacheFull(EventDataList eventDataList);
-
+         public void onLocationChange(Location location);
     }
 
 }

@@ -113,6 +113,8 @@ public class StatusFragment extends Fragment {
         if ( view != null ) {
             view.findViewById(R.id.tableRowRetry).setVisibility(value ? View.VISIBLE : View.GONE);
             view.findViewById(R.id.tableRowUpload).setVisibility(value ? View.VISIBLE : View.GONE);
+//            view.findViewById(R.id.tableRowInformation).setVisibility(value ? View.GONE : View.VISIBLE);
+            view.findViewById(R.id.tableRowInformation).setVisibility( View.VISIBLE);
         }
 
         if ( value ) {
@@ -121,6 +123,11 @@ public class StatusFragment extends Fragment {
         else {
             mTextViewUploadWaitTitle.setText(R.string.status_fragment_recorded);
         }
+
+    }
+
+    public void setInformation(String text) {
+        mTextViewInformation.setText(text);
     }
 
     public interface OnFragmentInteractionListener {

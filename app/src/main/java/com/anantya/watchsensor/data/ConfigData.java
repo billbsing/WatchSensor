@@ -34,7 +34,7 @@ public class ConfigData implements Parcelable {
     private String mKeyname;
     private boolean mIsTrackingEnabled;
     private int mHeartRateFrequency;
-    private boolean mIsGPSActive;
+    private boolean mIsGPSEnabled;
 
 
     private static final String PREFERENCE_FILENAME = "ConfigData";
@@ -49,7 +49,7 @@ public class ConfigData implements Parcelable {
     public static final String PREFERENCE_KEY_NAME = "key_name";
     public static final String PREFERENCE_IS_TRACKING_ENABLED = "is_tracking_enabled";
     public static final String PREFERENCE_HEART_RATE_FREQUENCY = "heart_rate_frequency";
-    public static final String PREFERENCE_IS_GPS_ACTIVE = "is_gps_active";
+    public static final String PREFERENCE_IS_GPS_ENABLED = "is_gps_enabled";
 
 
 
@@ -58,11 +58,11 @@ public class ConfigData implements Parcelable {
     private static final String DEFAULT_PRIMARY_KEY = "+VZA00p8wmyWDQTTg1e8/O1FpgcTK5MTnFLGU1y7SVo=";
     private static final String DEFAULT_URL = "https://colifewatch.servicebus.windows.net";
     private static final String DEFAULT_MESSAGE_QUEUE_NAME = "colifewatchdata";
-    private static final boolean DEFAULT_IS_TRACKING_ENABLED = true;
     private static final int DEFAULT_HEART_RATE_FREQUENCY = 0;
     private static final int DEFAULT_HEART_RATE_READ_FREQUENCY = 60;        // default to read heart rate for 1 minute
     private static final int DEFAULT_HEART_RATE_READ_MINIMUM_FREQUENCY = 10;        // default to read heart rate for 10 seconds if < 1 minute
-    private static final boolean DEFAULT_IS_GPS_ACTIVE = true;
+    private static final boolean DEFAULT_IS_TRACKING_ENABLED = true;
+    private static final boolean DEFAULT_IS_GPS_ENABLED = true;
 
 
 
@@ -96,7 +96,7 @@ public class ConfigData implements Parcelable {
         mKeyname = configData.getKeyname();
         mIsTrackingEnabled = configData.isTrackingEnabled();
         mHeartRateFrequency = configData.getHeartRateFrequency();
-        mIsGPSActive = configData.isGPSActive();
+        mIsGPSEnabled = configData.isGPSEnabled();
     }
 
     public void clear() {
@@ -108,7 +108,7 @@ public class ConfigData implements Parcelable {
         mKeyname = "";
         mIsTrackingEnabled = DEFAULT_IS_TRACKING_ENABLED;
         mHeartRateFrequency = DEFAULT_HEART_RATE_FREQUENCY;
-        mIsGPSActive = false;
+        mIsGPSEnabled = false;
     }
 
     public String getWatchId() {
@@ -177,8 +177,8 @@ public class ConfigData implements Parcelable {
         }
         return result;
     }
-    public boolean isGPSActive() { return mIsGPSActive; }
-    public void setGPSActive(boolean value) { mIsGPSActive = value; }
+    public boolean isGPSEnabled() { return mIsGPSEnabled; }
+    public void setGPSEnabled(boolean value) { mIsGPSEnabled = value; }
 
     public void assignDefaults(Context context) {
         setWatchId(getDefaultWatchId(context));
@@ -188,7 +188,7 @@ public class ConfigData implements Parcelable {
         setMesasgeQueueName(DEFAULT_MESSAGE_QUEUE_NAME);
         setTrackingEnabled(DEFAULT_IS_TRACKING_ENABLED);
         setHeartRateFrequency(DEFAULT_HEART_RATE_FREQUENCY);
-        setGPSActive(DEFAULT_IS_GPS_ACTIVE);
+        setGPSEnabled(DEFAULT_IS_GPS_ENABLED);
         saveToPreference(context, this);
     }
 
@@ -215,9 +215,7 @@ public class ConfigData implements Parcelable {
         mHeartRateFrequency = Integer.parseInt(frequencyText);
 
         mIsTrackingEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_TRACKING_ENABLED, DEFAULT_IS_TRACKING_ENABLED );
-        mIsGPSActive = sharedPreferences.getBoolean(PREFERENCE_IS_GPS_ACTIVE, DEFAULT_IS_GPS_ACTIVE );
-
-
+        mIsGPSEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_GPS_ENABLED, DEFAULT_IS_GPS_ENABLED );
     }
 
     public void wirteToPreference(SharedPreferences sharedPreferences) {
@@ -229,7 +227,7 @@ public class ConfigData implements Parcelable {
         editor.putString(PREFERENCE_MESSAGE_QUEUE_NAME, mMessageQueueName);
         editor.putString(PREFERENCE_KEY_NAME, mKeyname);
         editor.putString(PREFERENCE_HEART_RATE_FREQUENCY, String.valueOf(mHeartRateFrequency));
-        editor.putBoolean(PREFERENCE_IS_GPS_ACTIVE, mIsGPSActive);
+        editor.putBoolean(PREFERENCE_IS_GPS_ENABLED, mIsGPSEnabled);
         editor.putBoolean(PREFERENCE_IS_TRACKING_ENABLED, mIsTrackingEnabled);
 
         editor.apply();
@@ -249,7 +247,7 @@ public class ConfigData implements Parcelable {
                 && configData.getKeyname().equals(getPrimanryKey())
                 && configData.isTrackingEnabled() == isTrackingEnabled()
                 && configData.getHeartRateFrequency() == getHeartRateFrequency()
-                && configData.isGPSActive() == isGPSActive()
+                && configData.isGPSEnabled() == isGPSEnabled()
                 ;
     }
 
@@ -262,7 +260,7 @@ public class ConfigData implements Parcelable {
         mMessageQueueName = in.readString();
         mIsTrackingEnabled = in.readByte() != 0;
         mHeartRateFrequency = in.readInt();
-        mIsGPSActive = in.readByte() != 0;
+        mIsGPSEnabled = in.readByte() != 0;
     }
 
     public static final Creator<ConfigData> CREATOR = new Creator<ConfigData>() {
@@ -293,7 +291,7 @@ public class ConfigData implements Parcelable {
         dest.writeString(mMessageQueueName);
         dest.writeByte((byte) (mIsTrackingEnabled ? 1: 0));
         dest.writeInt(mHeartRateFrequency);
-        dest.writeByte((byte) (mIsGPSActive ? 1: 0));
+        dest.writeByte((byte) (mIsGPSEnabled ? 1: 0));
     }
 
 }

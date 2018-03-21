@@ -7,7 +7,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.BatteryManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -31,6 +36,10 @@ import com.anantya.watchsensor.libs.BatteryHelper;
 import com.anantya.watchsensor.libs.SensorReader;
 import com.anantya.watchsensor.services.EventDataCacheService;
 
+import java.time.Duration;
+import java.util.Date;
+import java.util.Locale;
+
 
 public class WatchSensorService extends Service {
     private Looper mServiceLooper;
@@ -42,12 +51,16 @@ public class WatchSensorService extends Service {
 
     private static final int NOTIFICATION_ID = 101;
     private static final long THREAD_SLEEP_TIME = DateUtils.SECOND_IN_MILLIS * 10;
-    private static final String PARAM_SERVICE_RELOAD = "WatchSensorService.reload";
+    private static final String PARAM_SERVICE_RELOAD = "WatchSensorService.param_reload";
     private static final String ON_ACTION_RELOAD = "WatchSensorService.on_action_reload";
     private static final String STATE_INIT = "init";
     private static final String STATE_READING = "reading";
     private static final String STATE_UPLOADING = "upload";
     private static final String STATE_RELOADING = "reload";
+
+    public static final String ON_EVENT_LOCATION_FOUND = "WatchSensorService.on_event_location_found";
+    public static final String PARAM_LOCATION = "WatchSensorService.param_location";
+    public static final String PARAM_SECONDS_LOCATION = "WatchSensorService.param_seconds_location";
 
 
     static public void start(Context context) {
@@ -66,6 +79,8 @@ public class WatchSensorService extends Service {
         private BroadcastReceiver mBroadcastControl;
         private SensorReader mSensorReader;
         private String mState;
+        private Date mLastLocationTime;
+
 
 
         public ServiceHandler(Looper looper) {
@@ -87,9 +102,9 @@ public class WatchSensorService extends Service {
                 }
             };
             broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_RELOAD));
-
             mState = STATE_INIT;
             mIsRunning = true;
+            mLastLocationTime = new Date(0);
             Log.d(TAG, "starting");
             mStartId = message.arg1;
 
@@ -123,9 +138,25 @@ public class WatchSensorService extends Service {
 
         @Override
         public boolean onCacheFull(EventDataList eventDataList) {
-            Log.d(TAG, "Cache is full");
+//            Log.d(TAG, "Cache is full");
             EventDataCacheService.requestEventDataSave(getBaseContext(), eventDataList);
             return true;
+        }
+
+        @Override
+        public void onLocationChange(Location location) {
+            long secondsSinceLastRead = 0;
+
+            Date now = new Date();
+            if ( mLastLocationTime.getTime() > 0 ) {
+                secondsSinceLastRead = now.getTime() - mLastLocationTime.getTime();
+            }
+            mLastLocationTime = now;
+            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
+            Intent intent = new Intent(ON_EVENT_LOCATION_FOUND);
+            intent.putExtra(PARAM_LOCATION, location);
+            intent.putExtra(PARAM_SECONDS_LOCATION, secondsSinceLastRead);
+            broadcastManager.sendBroadcast(intent);
         }
 
         protected void checkState() {
@@ -150,16 +181,13 @@ public class WatchSensorService extends Service {
 
         protected void startReadingSenors() {
             ConfigData configData = ConfigData.createFromPreference(getApplicationContext());
-            if ( configData.isTrackingEnabled() ) {
-                String text = "Sensor reader on";
-                mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
-                mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
-                mSensorReader.setGPSActive(configData.isGPSActive());
-                text += " tracking enabled";
-                mSensorReader.start(mServiceLooper);
-                Log.d(TAG, text);
-            }
-
+            String text = "Sensor reader on";
+            mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
+            mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
+            Log.d(TAG, "GPS " + configData.isGPSEnabled());
+            mSensorReader.setGPSEnabled(configData.isGPSEnabled());
+            mSensorReader.start(getMainLooper());
+            Log.d(TAG, text);
         }
 
         protected void startUploading() {
@@ -206,7 +234,10 @@ public class WatchSensorService extends Service {
                 .build();
 
 
+
         startForeground(NOTIFICATION_ID, notification);
+
+
     }
 
     @Override
@@ -221,6 +252,7 @@ public class WatchSensorService extends Service {
         else {
             Log.d(TAG, "already running");
         }
+
 
         return START_STICKY;
     }

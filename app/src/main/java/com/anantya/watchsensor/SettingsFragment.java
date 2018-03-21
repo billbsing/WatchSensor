@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.widget.CheckBox;
 import android.widget.EditText;
 
@@ -55,6 +56,9 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
     @Override
     public void onStart() {
         super.onStart();
+        Context context = getView().getContext();
+
+        PreferenceManager.setDefaultValues(context, R.xml.preferences_screen, false);
 
         Preference preference = findPreference(ConfigData.PREFERENCE_WATCH_ID);
         if ( preference != null) {
@@ -62,12 +66,11 @@ public class SettingsFragment extends PreferenceFragment implements SharedPrefer
         }
         preference = findPreference(ConfigData.PREFERENCE_HEART_RATE_FREQUENCY);
         if ( preference != null) {
-            preference.setSummary(mConfigData.getHeartRateAsString(getView().getContext()));
+            preference.setSummary(mConfigData.getHeartRateAsString(context));
         }
         preference = findPreference(PREFERENCE_VERSION);
         if ( preference != null) {
             try {
-                Context context = getView().getContext();
                 PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                 preference.setTitle(packageInfo.versionName);
             } catch (PackageManager.NameNotFoundException e) {

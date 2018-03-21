@@ -44,23 +44,23 @@ public class EventDataList implements Parcelable {
 
     public List<EventDataItem> getItems() { return mItems; }
 
-    public EventDataItem add(SensorEvent sensorEvent, long systemTimestamp) {
+    public synchronized EventDataItem add(SensorEvent sensorEvent, long systemTimestamp) {
         EventDataItem eventDataItem = new EventDataItem(sensorEvent, systemTimestamp);
         mItems.add(eventDataItem);
         return eventDataItem;
     }
 
-    public EventDataItem add(FrizzEvent sensorEvent, long systemTimestamp) {
+    public synchronized EventDataItem add(FrizzEvent sensorEvent, long systemTimestamp) {
         EventDataItem eventDataItem = new EventDataItem(sensorEvent, systemTimestamp);
         mItems.add(eventDataItem);
         return eventDataItem;
     }
 
-    public EventDataItem add(EventDataItem eventDataItem) {
+    public synchronized EventDataItem add(EventDataItem eventDataItem) {
         mItems.add(eventDataItem);
         return eventDataItem;
     }
-    public EventDataItem add(Location location, long systemTimestamp) {
+    public synchronized EventDataItem add(Location location, long systemTimestamp) {
         EventDataItem eventDataItem = new EventDataItem(location, systemTimestamp);
         mItems.add(eventDataItem);
         return eventDataItem;

@@ -41,8 +41,6 @@ class CacheFile {
             mHandle = new RandomAccessFile(file.getAbsoluteFile(), "rw");
         } catch (FileNotFoundException e) {
             mErrorMessage = e.getMessage();
-        } catch (IOException e) {
-            mErrorMessage = e.getMessage();
         }
         return mHandle != null;
     }

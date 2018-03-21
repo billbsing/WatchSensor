@@ -4,13 +4,20 @@ import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.FragmentManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.text.format.DateUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -25,6 +32,7 @@ import com.anantya.watchsensor.services.EventDataCacheService;
 import com.anantya.watchsensor.services.UploadService;
 import com.anantya.watchsensor.services.WatchSensorService;
 
+import java.util.Date;
 import java.util.Locale;
 
 /*
@@ -46,6 +54,9 @@ public class HomeActivity extends Activity {
     private BroadcastReceiver mBroadcastOnUploadStart;
     private BroadcastReceiver mBroadcastOnUploadDone;
     private BroadcastReceiver mBroadcastBatteryStatus;
+    private BroadcastReceiver mBroadcastOnLocationFound;
+    private LocationListener mLocationListener;
+    private Date mLastLocationTime;
 
 
     private ConfigData mConfigData;
@@ -68,7 +79,6 @@ public class HomeActivity extends Activity {
         mConfigData = ConfigData.createFromPreference(this);
 
 //        ConfigData.saveToPreference(this, mConfigData);
-        PreferenceManager.setDefaultValues(this, R.xml.preferences_screen, false);
 
 
         // start the main foreground service
@@ -164,6 +174,17 @@ public class HomeActivity extends Activity {
         };
         registerReceiver(mBroadcastBatteryStatus, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
+        mBroadcastOnLocationFound = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if ( mStatusFragment != null) {
+                    long secondsSinceLastLocionRead = intent.getLongExtra(WatchSensorService.PARAM_SECONDS_LOCATION, 0);
+                    mStatusFragment.setInformation(String.format(Locale.UK, "%d seconds location", secondsSinceLastLocionRead));
+                }
+            }
+        };
+        registerReceiver(mBroadcastOnLocationFound, new IntentFilter(WatchSensorService.ON_EVENT_LOCATION_FOUND));
+
         EventDataCacheService.requestEventDataStats(this);
 
 
@@ -179,6 +200,7 @@ public class HomeActivity extends Activity {
         broadcastManager.unregisterReceiver(mBroadcastOnEventDataCacheActionDone);
         broadcastManager.unregisterReceiver(mBroadcastOnUploadStart);
         broadcastManager.unregisterReceiver(mBroadcastOnUploadDone);
+        broadcastManager.unregisterReceiver(mBroadcastOnLocationFound);
         unregisterReceiver(mBroadcastBatteryStatus);
 
 //        NetworkDiscoverService.stopListen(this);

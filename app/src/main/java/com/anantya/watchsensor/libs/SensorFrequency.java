@@ -10,19 +10,19 @@ import android.text.format.DateUtils;
 public class SensorFrequency {
     private long mReadTimeout;
     private long mDelayTimeout;
-    private boolean mIsActive;
+    private boolean mIsEnabled;
     private int mReadSeconds;
     private int mDelaySeconds;
 
-    public SensorFrequency(boolean isActive) {
+    public SensorFrequency(boolean isEnabled) {
         // set Active, and defaults to continous reading
-        mIsActive = isActive;
+        mIsEnabled = isEnabled;
         mReadTimeout = 0;
         mDelayTimeout = 0;
     }
 
-    public boolean isActive() { return mIsActive;}
-    public void setActive(boolean value) { mIsActive = value; }
+    public boolean isEnabled() { return mIsEnabled;}
+    public void setEnabled(boolean value) { mIsEnabled = value; }
 
     public int getReadSeconds() { return mReadSeconds;}
     public void setReadSeconds(int value) { mReadSeconds = value;}
