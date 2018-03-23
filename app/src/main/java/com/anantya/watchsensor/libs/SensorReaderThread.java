@@ -20,9 +20,11 @@ import com.anantya.watchsensor.services.EventDataCacheService;
 import com.anantya.watchsensor.services.WatchSensorService;
 
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
-public class SensorReaderHandler extends Handler implements SensorReader.SensorReaderListener {
+public class SensorReaderThread extends HandlerThread implements SensorReader.SensorReaderListener {
 
 
     public static final int STATE_IDLE = 0x01;
@@ -42,6 +44,7 @@ public class SensorReaderHandler extends Handler implements SensorReader.SensorR
     private static final int MESSAGE_START = 0x01;
     private static final int MESSAGE_STOP = 0x02;
     private static final int MESSAGE_SET_STATE = 0x03;
+    private static final int MESSAGE_CHECK_READER = 0x04;
 
     private static final String TAG = "SensorReaderHandler";
 
@@ -49,39 +52,63 @@ public class SensorReaderHandler extends Handler implements SensorReader.SensorR
     private Date mLastLocationTime;
     private int mState;
     private Context mContext;
-//    private BroadcastReceiver mSetStateBroadcastReceiver;
+    private Handler mHandler;
+    private TimerTask mTickTask;
+    private Timer mTickTimer;
 
 
-
-    public static SensorReaderHandler startThread(Context context) {
-        HandlerThread thread = new HandlerThread("SensorReaderThread", Process.THREAD_PRIORITY_BACKGROUND);
+    public static SensorReaderThread init(Context context) {
+        SensorReaderThread thread = new SensorReaderThread(context);
         thread.start();
-        SensorReaderHandler handler = new SensorReaderHandler(thread.getLooper(), context);
-        handler.sendStart();
-        return handler;
+        thread.sendStart();
+        return thread;
     }
 
 
-    public SensorReaderHandler(Looper looper, Context context) {
-        super(looper);
+    class SensorReaderHandler extends Handler {
+        public SensorReaderHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message message) {
+            if ( message.what == MESSAGE_START) {
+                setState(STATE_IDLE);
+            }
+            else if ( message.what == MESSAGE_STOP) {
+                mTickTimer.cancel();
+                getLooper().quitSafely();
+            }
+            else if ( message.what == MESSAGE_SET_STATE) {
+                setState(message.arg1);
+            }
+            else if ( message.what == MESSAGE_CHECK_READER) {
+                if ( mSensorReader != null ) {
+                    mSensorReader.checkDelayReading();
+                }
+            }
+        }
+    }
+
+    public SensorReaderThread(Context context) {
+        super("SensorReaderThread",  Process.THREAD_PRIORITY_BACKGROUND);
         mContext = context;
     }
 
     @Override
-    public void handleMessage(Message message) {
-        if ( message.what == MESSAGE_START) {
-            mSensorReader = new SensorReader(mContext, this);
-            mLastLocationTime = new Date(0);
-            setState(STATE_IDLE);
-        }
-        else if ( message.what == MESSAGE_STOP) {
-            this.getLooper().quitSafely();
-        }
-        else if ( message.what == MESSAGE_SET_STATE) {
-            setState(message.arg1);
-        }
+    public void onLooperPrepared() {
+        mSensorReader = new SensorReader(mContext, this);
+        mLastLocationTime = new Date(0);
+        mHandler = new SensorReaderHandler(getLooper());
+        mTickTask = new TimerTask() {
+            @Override
+            public void run() {
+                sendCheckReader();
+            }
+        };
+        mTickTimer = new Timer();
+        mTickTimer.schedule(mTickTask, DateUtils.SECOND_IN_MILLIS, DateUtils.SECOND_IN_MILLIS);
     }
-
 
 
     private void startReadingSenors() {
@@ -158,18 +185,23 @@ public class SensorReaderHandler extends Handler implements SensorReader.SensorR
     }
 
     public void sendStart() {
-        Message message = obtainMessage(MESSAGE_START);
-        sendMessage(message);
+        Message message = mHandler.obtainMessage(MESSAGE_START);
+        mHandler.sendMessage(message);
     }
 
     public void sendStop() {
-        Message message = obtainMessage(MESSAGE_STOP);
-        sendMessage(message);
+        Message message = mHandler.obtainMessage(MESSAGE_STOP);
+        mHandler.sendMessage(message);
     }
     public void sendState(int state) {
-        Message message = obtainMessage(MESSAGE_SET_STATE);
+        Message message = mHandler.obtainMessage(MESSAGE_SET_STATE);
         message.arg1 = state;
-        sendMessage(message);
+        mHandler.sendMessage(message);
+    }
+
+    public void sendCheckReader() {
+        Message message = mHandler.obtainMessage(MESSAGE_CHECK_READER);
+        mHandler.sendMessage(message);
     }
 
 }

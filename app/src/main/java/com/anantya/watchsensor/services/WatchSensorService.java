@@ -24,7 +24,7 @@ import com.anantya.watchsensor.R;
 import com.anantya.watchsensor.data.ConfigData;
 import com.anantya.watchsensor.jobs.UploadDataJob;
 import com.anantya.watchsensor.libs.BatteryHelper;
-import com.anantya.watchsensor.libs.SensorReaderHandler;
+import com.anantya.watchsensor.libs.SensorReaderThread;
 
 
 public class WatchSensorService extends Service {
@@ -64,7 +64,7 @@ public class WatchSensorService extends Service {
     private final class ServiceHandler extends Handler {
         private BroadcastReceiver mBroadcastControl;
         private String mState;
-        private SensorReaderHandler mSensorReaderHandler;
+        private SensorReaderThread mSensorReaderThread;
 
 
         public ServiceHandler(Looper looper) {
@@ -91,7 +91,7 @@ public class WatchSensorService extends Service {
             Log.d(TAG, "starting");
             mStartId = message.arg1;
 
-            mSensorReaderHandler = SensorReaderHandler.startThread(WatchSensorService.this);
+            mSensorReaderThread = SensorReaderThread.init(WatchSensorService.this);
 
             while (mIsRunning) {
                 try {
@@ -117,7 +117,7 @@ public class WatchSensorService extends Service {
             stopReadingSensors();
             stopUploading();
             broadcastManager.unregisterReceiver(mBroadcastControl);
-            mSensorReaderHandler.sendStop();
+            mSensorReaderThread.sendStop();
             mStartId = 0;
             stopSelf(message.arg1);
         }
@@ -142,7 +142,7 @@ public class WatchSensorService extends Service {
 
         protected void startReadingSenors() {
 
-            mSensorReaderHandler.sendState(SensorReaderHandler.STATE_READ);
+            mSensorReaderThread.sendState(SensorReaderThread.STATE_READ);
         }
 
         protected void startUploading() {
@@ -153,7 +153,7 @@ public class WatchSensorService extends Service {
         }
 
         protected void stopReadingSensors() {
-            mSensorReaderHandler.sendState(SensorReaderHandler.STATE_IDLE);
+            mSensorReaderThread.sendState(SensorReaderThread.STATE_IDLE);
         }
 
         protected void stopUploading() {
