@@ -44,10 +44,6 @@ public class WatchSensorService extends Service {
     private static final String STATE_UPLOADING = "upload";
     private static final String STATE_RELOADING = "reload";
 
-    public static final String ON_EVENT_LOCATION = "WatchSensorService.on_event_location";
-    public static final String PARAM_LOCATION = "WatchSensorService.param_location";
-    public static final String PARAM_SECONDS_LOCATION = "WatchSensorService.param_seconds_location";
-
 
     static public void start(Context context) {
         Intent intent = new Intent(context, WatchSensorService.class);
@@ -200,11 +196,6 @@ public class WatchSensorService extends Service {
         Log.d(TAG, "onStart");
 
         if ( mStartId == 0) {
-/*
-            WatchRunner watchRunner = new WatchRunner(startId);
-            new Thread(watchRunner).start();
-*/
-
             Message message = mServiceHandler.obtainMessage();
             message.arg1 = startId;
             mServiceHandler.sendMessage(message);

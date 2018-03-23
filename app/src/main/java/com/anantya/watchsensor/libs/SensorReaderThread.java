@@ -37,9 +37,6 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
     public static final String PARAM_LOCATION = "SensorReaderHandler.param_location";
     public static final String PARAM_SECONDS_LOCATION = "SensorReaderHandler.param_seconds_location";
 
-    public static final String ON_SET_STATE = "SensorReaderHandler.on_set_state";
-    public static final String PARAM_STATE = "SensorReaderHandler.param_state";
-
 
     private static final int MESSAGE_START = 0x01;
     private static final int MESSAGE_STOP = 0x02;
@@ -65,7 +62,7 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
     }
 
 
-    class SensorReaderHandler extends Handler {
+    private final class SensorReaderHandler extends Handler {
         public SensorReaderHandler(Looper looper) {
             super(looper);
         }
@@ -129,7 +126,6 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         Log.d(TAG, "stop reading");
     }
 
-
     private void raiseOnLocationEevnt(Location location, long secondsSinceLastRead) {
         LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(mContext);
         Intent intent = new Intent(ON_EVENT_LOCATION);
@@ -140,8 +136,10 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         broadcastManager.sendBroadcast(intent);
         Toast.makeText(mContext, "Location", Toast.LENGTH_SHORT).show();
     }
+
     @Override
     public boolean onCacheFull(EventDataList eventDataList) {
+        Log.d(TAG, "on cache full");
         EventDataCacheService.requestEventDataSave(mContext, eventDataList);
         return true;
     }

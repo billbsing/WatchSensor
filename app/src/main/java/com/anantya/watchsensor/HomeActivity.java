@@ -27,6 +27,7 @@ import com.anantya.watchsensor.data.ConfigData;
 import com.anantya.watchsensor.data.EventDataStatItem;
 import com.anantya.watchsensor.jobs.UploadDataJob;
 import com.anantya.watchsensor.libs.BatteryHelper;
+import com.anantya.watchsensor.libs.SensorReaderThread;
 import com.anantya.watchsensor.libs.WifiHelper;
 import com.anantya.watchsensor.services.EventDataCacheService;
 import com.anantya.watchsensor.services.UploadService;
@@ -175,7 +176,7 @@ public class HomeActivity extends Activity {
         mBroadcastOnLocation = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                long secondsSinceLastLocationRead = intent.getLongExtra(WatchSensorService.PARAM_SECONDS_LOCATION, 0);
+                long secondsSinceLastLocationRead = intent.getLongExtra(SensorReaderThread.PARAM_SECONDS_LOCATION, 0);
 
                 if ( secondsSinceLastLocationRead >= 0 ) {
                     Toast.makeText(HomeActivity.this, "Location "+ secondsSinceLastLocationRead, Toast.LENGTH_SHORT).show();
@@ -191,7 +192,7 @@ public class HomeActivity extends Activity {
 */
             }
         };
-        registerReceiver(mBroadcastOnLocation, new IntentFilter(WatchSensorService.ON_EVENT_LOCATION));
+        registerReceiver(mBroadcastOnLocation, new IntentFilter(SensorReaderThread.ON_EVENT_LOCATION));
 
         EventDataCacheService.requestEventDataStats(this);
 
