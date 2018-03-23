@@ -7,44 +7,29 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.BatteryManager;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
-import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.anantya.watchsensor.HomeActivity;
 import com.anantya.watchsensor.R;
 import com.anantya.watchsensor.data.ConfigData;
-import com.anantya.watchsensor.data.EventDataList;
-import com.anantya.watchsensor.jobs.MaintenanceJob;
 import com.anantya.watchsensor.jobs.UploadDataJob;
 import com.anantya.watchsensor.libs.BatteryHelper;
-import com.anantya.watchsensor.libs.SensorReader;
-import com.anantya.watchsensor.services.EventDataCacheService;
-
-import java.time.Duration;
-import java.util.Date;
-import java.util.Locale;
+import com.anantya.watchsensor.libs.SensorReaderHandler;
 
 
 public class WatchSensorService extends Service {
-    private Looper mServiceLooper;
-    private ServiceHandler mServiceHandler;
+    private static Looper mServiceLooper;
+    private static ServiceHandler mServiceHandler;
     private int mStartId;
     private boolean mIsRunning;
 
@@ -76,11 +61,10 @@ public class WatchSensorService extends Service {
         broadcastManager.sendBroadcast(intent);
     }
 
-    private final class ServiceHandler extends Handler implements SensorReader.SensorReaderListener {
+    private final class ServiceHandler extends Handler {
         private BroadcastReceiver mBroadcastControl;
-        private SensorReader mSensorReader;
         private String mState;
-        private Date mLastLocationTime;
+        private SensorReaderHandler mSensorReaderHandler;
 
 
         public ServiceHandler(Looper looper) {
@@ -104,13 +88,14 @@ public class WatchSensorService extends Service {
             broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_RELOAD));
             mState = STATE_INIT;
             mIsRunning = true;
-            mLastLocationTime = new Date(0);
             Log.d(TAG, "starting");
             mStartId = message.arg1;
 
-            mSensorReader = new SensorReader(WatchSensorService.this, this);
+            mSensorReaderHandler = SensorReaderHandler.startThread(WatchSensorService.this);
+
             while (mIsRunning) {
                 try {
+
                     Thread.sleep(THREAD_SLEEP_TIME);
                 } catch ( InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -132,32 +117,12 @@ public class WatchSensorService extends Service {
             stopReadingSensors();
             stopUploading();
             broadcastManager.unregisterReceiver(mBroadcastControl);
+            mSensorReaderHandler.sendStop();
             mStartId = 0;
             stopSelf(message.arg1);
         }
 
-        @Override
-        public boolean onCacheFull(EventDataList eventDataList) {
-//            Log.d(TAG, "Cache is full");
-            EventDataCacheService.requestEventDataSave(getBaseContext(), eventDataList);
-            return true;
-        }
-
-        @Override
-        public void onLocationChange(Location location) {
-            long secondsSinceLastRead = 0;
-
-            Date now = new Date();
-            if ( mLastLocationTime.getTime() > 0 ) {
-                secondsSinceLastRead = now.getTime() - mLastLocationTime.getTime();
-            }
-            mLastLocationTime = now;
-            raiseOnLocationEevnt(location, secondsSinceLastRead);
-        }
-
         protected void checkState() {
-            // call sensor reader to turn on/off sensors for a period of time
-            mSensorReader.checkDelayReading();
 
             // check to see if the watch has power?
             String newState = (BatteryHelper.isPowered(getApplicationContext()) ) ? STATE_UPLOADING : STATE_READING;
@@ -176,15 +141,8 @@ public class WatchSensorService extends Service {
         }
 
         protected void startReadingSenors() {
-            ConfigData configData = ConfigData.createFromPreference(getApplicationContext());
-            String text = "Sensor reader on";
-            mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
-            mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
-            Log.d(TAG, "GPS " + configData.isGPSEnabled());
-            mSensorReader.setGPSEnabled(configData.isGPSEnabled());
-            mSensorReader.start(mServiceLooper);
-            raiseOnLocationEevnt(null, -1);
-            Log.d(TAG, text);
+
+            mSensorReaderHandler.sendState(SensorReaderHandler.STATE_READ);
         }
 
         protected void startUploading() {
@@ -195,8 +153,7 @@ public class WatchSensorService extends Service {
         }
 
         protected void stopReadingSensors() {
-            mSensorReader.stop();
-            Log.d(TAG, "stop reading");
+            mSensorReaderHandler.sendState(SensorReaderHandler.STATE_IDLE);
         }
 
         protected void stopUploading() {
@@ -205,16 +162,6 @@ public class WatchSensorService extends Service {
             Log.d(TAG, "stop uploading");
         }
 
-        protected void raiseOnLocationEevnt(Location location, long secondsSinceLastRead) {
-            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
-            Intent intent = new Intent(ON_EVENT_LOCATION);
-            if ( location != null) {
-                intent.putExtra(PARAM_LOCATION, location);
-            }
-            intent.putExtra(PARAM_SECONDS_LOCATION, secondsSinceLastRead);
-            broadcastManager.sendBroadcast(intent);
-//            Toast.makeText(WatchSensorService.this, "Location", Toast.LENGTH_SHORT).show();
-        }
     }
 
     public WatchSensorService() {
@@ -253,6 +200,11 @@ public class WatchSensorService extends Service {
         Log.d(TAG, "onStart");
 
         if ( mStartId == 0) {
+/*
+            WatchRunner watchRunner = new WatchRunner(startId);
+            new Thread(watchRunner).start();
+*/
+
             Message message = mServiceHandler.obtainMessage();
             message.arg1 = startId;
             mServiceHandler.sendMessage(message);

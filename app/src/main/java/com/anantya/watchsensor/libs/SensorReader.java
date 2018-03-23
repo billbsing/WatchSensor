@@ -148,7 +148,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         if (mGPSFrequency.isEnabled()) {
             Log.d(TAG, "GPS Requested");
             Criteria criteria = new Criteria();
-            criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+//            criteria.setAccuracy(Criteria.ACCURACY_COARSE);
             mLocationManager.requestLocationUpdates(LOCATION_MINIMUM_TIME, LOCATION_MINIMUM_DISTANCE, criteria, this, looper);
 //            mLocationManager.requestSingleUpdate(criteria, this, looper);
         }
