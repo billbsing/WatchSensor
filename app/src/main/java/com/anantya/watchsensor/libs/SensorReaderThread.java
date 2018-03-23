@@ -50,7 +50,6 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
     private int mState;
     private Context mContext;
     private Handler mHandler;
-    private TimerTask mTickTask;
     private Timer mTickTimer;
 
 
@@ -70,10 +69,13 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         @Override
         public void handleMessage(Message message) {
             if ( message.what == MESSAGE_START) {
+
                 setState(STATE_IDLE);
             }
             else if ( message.what == MESSAGE_STOP) {
-                mTickTimer.cancel();
+                if ( mTickTimer != null) {
+                    mTickTimer.cancel();
+                }
                 getLooper().quitSafely();
             }
             else if ( message.what == MESSAGE_SET_STATE) {
@@ -97,14 +99,13 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         mSensorReader = new SensorReader(mContext, this);
         mLastLocationTime = new Date(0);
         mHandler = new SensorReaderHandler(getLooper());
-        mTickTask = new TimerTask() {
+        mTickTimer = new Timer();
+        mTickTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 sendCheckReader();
             }
-        };
-        mTickTimer = new Timer();
-        mTickTimer.schedule(mTickTask, DateUtils.SECOND_IN_MILLIS, DateUtils.SECOND_IN_MILLIS);
+        }, DateUtils.SECOND_IN_MILLIS, DateUtils.SECOND_IN_MILLIS);
     }
 
 
@@ -115,7 +116,7 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
         Log.d(TAG, "GPS " + configData.isGPSEnabled());
         mSensorReader.setGPSEnabled(configData.isGPSEnabled());
-        mSensorReader.start(null);
+        mSensorReader.start(getLooper());
         raiseOnLocationEevnt(null, -1);
         Log.d(TAG, text);
 
@@ -157,20 +158,6 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
 
     }
 
-
-/*
-        boolean isRunning = true;
-        while ( isRunning ) {
-            try {
-                Thread.sleep(DateUtils.SECOND_IN_MILLIS);
-                mSensorReader.checkDelayReading();
-            } catch (InterruptedException e) {
-                isRunning = false;
-                // e.printStackTrace();
-            }
-        }
-     */
-
     protected synchronized void setState(int state) {
         mState = state;
         if ( STATE_READ == mState) {
@@ -179,7 +166,6 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         else {
             stopReadingSensors();
         }
-
     }
 
     public void sendStart() {
