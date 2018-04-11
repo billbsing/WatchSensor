@@ -22,6 +22,11 @@ import jp.megachips.frizzservice.FrizzEvent;
 public class EventDataList implements Parcelable {
 
     private List<EventDataItem> mItems;
+    private static final int MOVEMENT_RATE_AXIS_COUNT = 3;
+    private static final String MOVEMENT_RATE_SENSOR_NAME = "Gyroscope";
+
+    private static final int POSITION_RATE_AXIS_COUNT = 3;
+    private static final String POSITION_RATE_SENSOR_NAME = "Accelerometer";
 
     public EventDataList() {
         mItems = new ArrayList<EventDataItem>();
@@ -62,6 +67,12 @@ public class EventDataList implements Parcelable {
     }
     public synchronized EventDataItem add(Location location, long systemTimestamp) {
         EventDataItem eventDataItem = new EventDataItem(location, systemTimestamp);
+        mItems.add(eventDataItem);
+        return eventDataItem;
+    }
+
+    public synchronized EventDataItem add(String eventName, float value, long systemTimestamp) {
+        EventDataItem eventDataItem = new EventDataItem(eventName, value, systemTimestamp);
         mItems.add(eventDataItem);
         return eventDataItem;
     }
@@ -123,6 +134,51 @@ public class EventDataList implements Parcelable {
             }
         }
         return newList;
+    }
+
+    public float getMovementRate() {
+
+        float total = 0;
+        int counter = 0;
+        ListIterator<EventDataItem> iterator = mItems.listIterator();
+
+        while( iterator.hasNext() ) {
+            EventDataItem item = iterator.next();
+            if ( item.getName().equals(MOVEMENT_RATE_SENSOR_NAME)) {
+                for ( int i = 0; i < MOVEMENT_RATE_AXIS_COUNT; i ++ ) {
+                    total += Math.abs(item.getValues()[i]);
+                }
+                counter += 1;
+            }
+        }
+        if ( counter > 0 ) {
+            total = total / counter;
+        }
+        return total;
+    }
+
+    public float[] getPositionRate() {
+        float total = 0;
+        float [] totals = new float[POSITION_RATE_AXIS_COUNT];
+        int counter = 0;
+        ListIterator<EventDataItem> iterator = mItems.listIterator();
+
+        while( iterator.hasNext() ) {
+            EventDataItem item = iterator.next();
+            if ( item.getName().equals(POSITION_RATE_SENSOR_NAME)) {
+                for ( int i = 0; i < POSITION_RATE_AXIS_COUNT; i ++ ) {
+                    totals[i] += Math.abs(item.getValues()[i]);
+                }
+                counter += 1;
+            }
+        }
+
+        if ( counter > 0 ) {
+            for (int i = 0; i < MOVEMENT_RATE_AXIS_COUNT; i++) {
+                totals[i] = totals[i] / counter;
+            }
+        }
+        return totals;
     }
 
     public EventDataList clone() {

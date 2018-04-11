@@ -53,10 +53,15 @@ public class SensorReader implements SensorEventListener, FrizzListener, Locatio
     private SensorFrequency mHeartRateFrequency;
     private Lock mProcessLock;
     private LocationManager mLocationManager;
+    private int mSampleRate;
 
-
+    public static final int SENSOR_READER_SAMPLE_RATE_ACTIVE = SensorManager.SENSOR_DELAY_GAME;
+    public static final int SENSOR_READER_SAMPLE_RATE_RESTING = SensorManager.SENSOR_DELAY_UI;
+    public static final int SENSOR_READER_SAMPLE_RATE_SLEEPING = SensorManager.SENSOR_DELAY_NORMAL;
 
     private static final String TAG = "SensorReader";
+
+    private static final String SENSOR_RATE_EVENT_NAME = "SampleRate";
 
 /*
 
@@ -108,7 +113,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mSensorFrequency = new SensorFrequency(true);
         mHeartRateFrequency = new SensorFrequency(true);
         mGPSFrequency = new SensorFrequency(true);
-
+        mSampleRate = SENSOR_READER_SAMPLE_RATE_SLEEPING;
 
         mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
@@ -136,8 +141,9 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mCacheTimeoutTime = System.currentTimeMillis() + CACHE_TIMOUT;
         if (mSensorFrequency.isEnabled()) {
             Log.d(TAG, "Sensors Enabled");
+            onSampleRateChanged(mSampleRate);
             for (int i = 0; i < mSensorList.size(); i++) {
-                mSensorManager.registerListener(this, mSensorList.get(i), SENSOR_DELAY_RATE);
+                mSensorManager.registerListener(this, mSensorList.get(i), mSampleRate);
             }
         }
         if (mHeartRateFrequency.isEnabled()) {
@@ -159,6 +165,18 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         heartRateStop();
         mHeartRateFrequency.stop();
         mLocationManager.removeUpdates(this);
+    }
+
+    public void updateSampleRate(int sampleRate) {
+        mSampleRate = sampleRate;
+        if (mSensorFrequency.isEnabled()) {
+            mSensorManager.unregisterListener(this);
+            Log.d(TAG, "Sensors sample rate changed");
+            onSampleRateChanged(mSampleRate);
+            for (int i = 0; i < mSensorList.size(); i++) {
+                mSensorManager.registerListener(this, mSensorList.get(i), mSampleRate);
+            }
+        }
     }
 
     public void checkDelayReading() {
@@ -184,6 +202,9 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     public boolean isGPSEnabled() { return mGPSFrequency.isEnabled();}
     public void setGPSEnabled(boolean value) { mGPSFrequency.setEnabled(value); }
+
+    public int getSampleRate() { return mSampleRate;}
+    public void setSampleRate(int value) { mSampleRate = value; }
 
 
     protected synchronized void processCacheFinished() {
@@ -229,6 +250,15 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
 
     }
 
+    protected void onSampleRateChanged(float sampleRate) {
+        mProcessLock.lock();
+        try {
+            mEventDataList.add(SENSOR_RATE_EVENT_NAME, sampleRate, System.currentTimeMillis());
+            processCacheFinished();
+        } finally {
+            mProcessLock.unlock();
+        }
+    }
     @Override
     public void onFrizzChanged(FrizzEvent event) {
         mProcessLock.lock();

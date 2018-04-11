@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.os.SystemClock;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -24,6 +25,7 @@ import com.anantya.watchsensor.R;
 import com.anantya.watchsensor.data.ConfigData;
 import com.anantya.watchsensor.jobs.UploadDataJob;
 import com.anantya.watchsensor.libs.BatteryHelper;
+import com.anantya.watchsensor.libs.SensorReader;
 import com.anantya.watchsensor.libs.SensorReaderThread;
 
 import java.util.Timer;
@@ -41,17 +43,24 @@ public class WatchSensorService extends Service {
     private static final String PARAM_SERVICE_RELOAD = "WatchSensorService.param_reload";
     private static final String ON_ACTION_RELOAD = "WatchSensorService.on_action_reload";
 
-    private static final int SERVICE_STATE_INIT = 0x01;
-    private static final int SERVICE_STATE_READING =  0x02;
-    private static final int SERVICE_STATE_STANDBY = 0x03;
-    private static final int SERVICE_STATE_UPLOADING = 0x04;
-    private static final int SERVICE_STATE_RELOADING = 0x05;
+    private static final String ON_ACTION_REQUEST_SERVICE_STATE = "WatchSensorService.on_action_request_service_state";
+
+    public static final String ON_EVENT_SERVICE_STATE_CHANGED = "WatchSensorService.on_event_service_state_changed";
+    public static final String PARAM_SERVICE_STATE = "WatchSensorService.param_service_state";
+
+    public static final int SERVICE_STATE_INIT =            0x01;        // not started collecting data
+    public static final int SERVICE_STATE_READING =         0x02;        // reading in full active mode
+    public static final int SERVICE_STATE_UPLOADING =       0x03;        // connected to base station
+    public static final int SERVICE_STATE_RELOADING =       0x04;        // reloading data, similar to _INIT
 
     private static final int MESSAGE_START = 0x01;
     private static final int MESSAGE_STOP = 0x02;
     private static final int MESSAGE_RELOAD = 0x03;
     private static final int MESSAGE_CHECK_STATE = 0x04;
     private static final int MESSAGE_SET_STATE = 0x05;
+
+
+    private static final long STARTUP_WAIT_TIMEOUT_TIME = DateUtils.SECOND_IN_MILLIS * 2;
 
 
     static public void start(Context context) {
@@ -66,6 +75,12 @@ public class WatchSensorService extends Service {
         broadcastManager.sendBroadcast(intent);
     }
 
+    static public void requestServiceState(Context context) {
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(context);
+        Intent intent = new Intent(ON_ACTION_REQUEST_SERVICE_STATE);
+        broadcastManager.sendBroadcast(intent);
+
+    }
 
     private final class ServiceHandlerThread extends HandlerThread {
 
@@ -74,6 +89,7 @@ public class WatchSensorService extends Service {
         private int mStartId;
         private SensorReaderThread mSensorReaderThread;
         private BroadcastReceiver mBroadcastControl;
+        private BroadcastReceiver mBroadcastRequestServiceState;
         private Timer mCheckTimer;
 
 
@@ -87,16 +103,7 @@ public class WatchSensorService extends Service {
             @Override
             public void handleMessage(Message message) {
                 if ( message.what == MESSAGE_START) {
-                    setServiceState(SERVICE_STATE_INIT);
-                    Log.d(TAG, "starting");
-                    setStartId(message.arg1);
-                    mCheckTimer = new Timer();
-                    mCheckTimer.scheduleAtFixedRate(new TimerTask() {
-                        @Override
-                        public void run() {
-                            sendCheckState();
-                        }
-                    }, CHECK_SERVICE_STATE_PERIOD, CHECK_SERVICE_STATE_PERIOD);
+                    startThread(message.arg1);
                 }
                 else if ( message.what == MESSAGE_STOP) {
                     Log.d(TAG, "closing");
@@ -110,11 +117,7 @@ public class WatchSensorService extends Service {
                 }
                 else if ( message.what == MESSAGE_CHECK_STATE) {
                     checkServiceState();
-                    if (UploadService.isActive(WatchSensorService.this)) {
-                        ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
-                        // request an upload
-                        UploadService.requestUpload(WatchSensorService.this, configData);
-                    }
+                    checkUploadService();
                 }
             }
         }
@@ -126,26 +129,26 @@ public class WatchSensorService extends Service {
 
         @Override
         public void onLooperPrepared() {
-            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
-
-            // get any change to the event data cache
-            mBroadcastControl = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    boolean isReload = intent.getBooleanExtra(PARAM_SERVICE_RELOAD, false);
-                    Log.d(TAG, "reloading requested " + isReload);
-                    if (isReload) {
-                        sendServiceState(SERVICE_STATE_RELOADING);
-                    }
-                }
-            };
-            broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_RELOAD));
-            mSensorReaderThread = SensorReaderThread.init(WatchSensorService.this);
             mHandler = new ServiceHandler(getLooper());
+        }
 
+        public synchronized boolean isRunning() {
+            return mHandler != null;
+        }
+
+        public synchronized boolean isStarted() {
+            return mStartId != 0;
+        }
+
+        public void waitForStartup() {
+            long timeoutTime = SystemClock.currentThreadTimeMillis() + STARTUP_WAIT_TIMEOUT_TIME;
+            while ( !isRunning() && timeoutTime > SystemClock.currentThreadTimeMillis()) {
+                yield();
+            }
         }
 
         public void sendStart(int startId) {
+
             Message message = mHandler.obtainMessage(MESSAGE_START);
             message.arg1 = startId;
             mHandler.sendMessage(message);
@@ -164,8 +167,17 @@ public class WatchSensorService extends Service {
             mHandler.sendMessage(message);
         }
 
+        private void raiseOnServiceStateChangeEvent(int seviceState) {
+            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
+            Intent intent = new Intent(ON_EVENT_SERVICE_STATE_CHANGED);
+            intent.putExtra(PARAM_SERVICE_STATE, seviceState);
+            broadcastManager.sendBroadcast(intent);
+        }
+
+
         protected synchronized void setServiceState(int serviceState) {
             mServiceState = serviceState;
+            raiseOnServiceStateChangeEvent(mServiceState);
         }
         protected synchronized int getServiceState() {
             return mServiceState;
@@ -178,17 +190,55 @@ public class WatchSensorService extends Service {
             return mStartId;
         }
 
+        protected void startThread(int startId) {
+            setServiceState(SERVICE_STATE_INIT);
+            Log.d(TAG, "starting");
+            setStartId(startId);
+            mCheckTimer = new Timer();
+            mCheckTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    sendCheckState();
+                }
+            }, CHECK_SERVICE_STATE_PERIOD, CHECK_SERVICE_STATE_PERIOD);
+
+            LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
+
+            // get any change to the event data cache
+            mBroadcastControl = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    boolean isReload = intent.getBooleanExtra(PARAM_SERVICE_RELOAD, false);
+                    Log.d(TAG, "reloading requested " + isReload);
+                    if (isReload) {
+                        sendServiceState(SERVICE_STATE_RELOADING);
+                    }
+                }
+            };
+            broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_RELOAD));
+
+            mBroadcastRequestServiceState = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    raiseOnServiceStateChangeEvent(getServiceState());
+                }
+            };
+            broadcastManager.registerReceiver(mBroadcastControl, new IntentFilter(ON_ACTION_REQUEST_SERVICE_STATE));
+
+            mSensorReaderThread = SensorReaderThread.init(WatchSensorService.this);
+
+        }
         protected void closeThread() {
             LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(WatchSensorService.this);
             stopReadingSensors();
             stopUploading();
             broadcastManager.unregisterReceiver(mBroadcastControl);
+            broadcastManager.unregisterReceiver(mBroadcastRequestServiceState);
             mSensorReaderThread.sendStop();
             stopSelf(getStartId());
         }
 
-        protected void startReadingSenors() {
-
+        protected void startReadingSensors() {
             mSensorReaderThread.sendState(SensorReaderThread.STATE_READ);
         }
 
@@ -200,7 +250,7 @@ public class WatchSensorService extends Service {
         }
 
         protected void stopReadingSensors() {
-            mSensorReaderThread.sendState(SensorReaderThread.STATE_IDLE);
+            mSensorReaderThread.sendState(SensorReaderThread.STATE_OFF);
         }
 
         protected void stopUploading() {
@@ -218,7 +268,7 @@ public class WatchSensorService extends Service {
                 setServiceState(newServiceState);
                 if ( getServiceState() == SERVICE_STATE_READING) {
                     stopUploading();
-                    startReadingSenors();
+                    startReadingSensors();
                 }
                 else {
                     stopReadingSensors();
@@ -226,18 +276,24 @@ public class WatchSensorService extends Service {
                 }
             }
         }
-
+        protected void checkUploadService() {
+            if (UploadService.isActive(WatchSensorService.this)) {
+                ConfigData configData = ConfigData.createFromPreference(WatchSensorService.this);
+                // request an upload
+                UploadService.requestUpload(WatchSensorService.this, configData);
+            }
+        }
     }
-
-
 
     public WatchSensorService() {
     }
 
-
     @Override
     public void onCreate() {
         super.onCreate();
+
+        mServiceHandlerThread = new ServiceHandlerThread();
+        mServiceHandlerThread.start();
 
         Intent notificationIntent = new Intent(this, HomeActivity.class);
         PendingIntent pendingIntent =
@@ -253,17 +309,14 @@ public class WatchSensorService extends Service {
 
 
         startForeground(NOTIFICATION_ID, notification);
-
-
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStart");
 
-        if ( mServiceHandlerThread == null) {
-            mServiceHandlerThread = new ServiceHandlerThread();
-            mServiceHandlerThread.start();
+        if ( !mServiceHandlerThread.isStarted()) {
+            mServiceHandlerThread.waitForStartup();
             mServiceHandlerThread.sendStart(startId);
         }
         else {

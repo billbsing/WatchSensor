@@ -106,7 +106,7 @@ public class StatusFragment extends Fragment {
     }
 
 
-    public void setIsPowered(boolean value) {
+    public void setUploadingView(boolean value) {
         mTextViewPercentDone.setVisibility(value ? View.VISIBLE : View.GONE);
         mProgressBar.setVisibility(value ? View.VISIBLE : View.GONE);
         View view = getView();

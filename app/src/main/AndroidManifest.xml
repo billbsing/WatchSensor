@@ -35,8 +35,7 @@
             android:exported="false" />
         <service
             android:name=".services.WatchSensorService"
-            android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
         <service
             android:name=".services.UploadService"
             android:exported="false" />
@@ -55,9 +54,6 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name=".libs.SensorReaderHandler"
-            android:exported="false"></service>
     </application>
 
 </manifest>

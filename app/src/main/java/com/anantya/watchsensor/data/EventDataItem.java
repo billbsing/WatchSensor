@@ -85,6 +85,9 @@ public class EventDataItem implements Parcelable {
             "MotionSensing",            // SENSOR_TYPE_MOTION_SENSING,// 54
             "Calorie",                     //SENSOR_TYPE_CALORIE, 	// 55
             "BikeDetector",             // SENSOR_TYPE_BIKE_DETECTOR, // 56
+
+            // User defined - our own
+            "SampleRate",
     };
 
 
@@ -140,6 +143,14 @@ public class EventDataItem implements Parcelable {
             mValues[4] = location.getBearing();
         }
 */
+    }
+
+    public EventDataItem(String name, float value, long systemTimestamp) {
+        mName = name;
+        mSystemTimestamp = systemTimestamp;
+        mEventTimestamp = systemTimestamp;
+        mValues = new float[4];
+        mValues[0] = value;
     }
 
     public void clear() {

@@ -27,16 +27,24 @@ import java.util.TimerTask;
 public class SensorReaderThread extends HandlerThread implements SensorReader.SensorReaderListener {
 
 
-    public static final int STATE_IDLE = 0x01;
+    public static final int STATE_OFF = 0x01;
     public static final int STATE_READ = 0x02;
-    public static final int STATE_STANDBY = 0x03;
 
 
+    public static final String ON_EVENT_LOCATION = "SensorReaderThread.on_event_location";
+    public static final String PARAM_LOCATION = "SensorReaderThread.param_location";
+    public static final String PARAM_SECONDS_LOCATION = "SensorReaderThread.param_seconds_location";
 
-    public static final String ON_EVENT_LOCATION = "SensorReaderHandler.on_event_location";
-    public static final String PARAM_LOCATION = "SensorReaderHandler.param_location";
-    public static final String PARAM_SECONDS_LOCATION = "SensorReaderHandler.param_seconds_location";
+    public static final String ON_EVENT_SAMPLE_RATE = "SensorReaderThread.on_event_sample_rate";
+    public static final String PARAM_SAMPLE_RATE = "SensorReaderThread.param_sensor_reader_sample_rate";
 
+    public static final String ON_EVENT_MOVEMENT_RATE = "SensorReaderThread.on_event_movement_rate";
+    public static final String PARAM_MOVEMENT_RATE = "SensorReaderThread.param_sensor_reader_movement_rate";
+
+
+    private static final float MINIMUM_MOVEMENT_RATE_RESTING = 1.0f;        // greater than this number then resting
+    private static final float MINIMUM_MOVEMENT_RATE_ACTIVE = 100.0f;       // greater than this then active
+    private static final long CHECK_SAMPLE_RATE_PERIOD = DateUtils.SECOND_IN_MILLIS * 30;
 
     private static final int MESSAGE_START = 0x01;
     private static final int MESSAGE_STOP = 0x02;
@@ -51,12 +59,14 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
     private Context mContext;
     private Handler mHandler;
     private Timer mTickTimer;
+    private int mSampleRate;
+    private float mMaxMotionRate;
+    private Timer mCheckTimer;
 
 
     public static SensorReaderThread init(Context context) {
         SensorReaderThread thread = new SensorReaderThread(context);
         thread.start();
-        thread.sendStart();
         return thread;
     }
 
@@ -69,12 +79,24 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         @Override
         public void handleMessage(Message message) {
             if ( message.what == MESSAGE_START) {
+                setState(STATE_OFF);
+                setSampleRate(mSensorReader.getSampleRate());
+                mCheckTimer = new Timer();
+                mCheckTimer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        // reset for the next data event to check for the correct sample rate
+                        setMaxMotionRate(0);
+                    }
+                }, CHECK_SAMPLE_RATE_PERIOD, CHECK_SAMPLE_RATE_PERIOD);
 
-                setState(STATE_IDLE);
             }
             else if ( message.what == MESSAGE_STOP) {
                 if ( mTickTimer != null) {
                     mTickTimer.cancel();
+                }
+                if ( mCheckTimer != null) {
+                    mCheckTimer.cancel();
                 }
                 getLooper().quitSafely();
             }
@@ -96,9 +118,9 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
 
     @Override
     public void onLooperPrepared() {
+        mHandler = new SensorReaderHandler(getLooper());
         mSensorReader = new SensorReader(mContext, this);
         mLastLocationTime = new Date(0);
-        mHandler = new SensorReaderHandler(getLooper());
         mTickTimer = new Timer();
         mTickTimer.schedule(new TimerTask() {
             @Override
@@ -106,16 +128,18 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
                 sendCheckReader();
             }
         }, DateUtils.SECOND_IN_MILLIS, DateUtils.SECOND_IN_MILLIS);
+        sendStart();
     }
 
 
-    private void startReadingSenors() {
+    private void startReadingSenors(int sensorReaderSampleRate) {
         ConfigData configData = ConfigData.createFromPreference(mContext);
         String text = "Sensor reader on";
         mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
         mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
         Log.d(TAG, "GPS " + configData.isGPSEnabled());
         mSensorReader.setGPSEnabled(configData.isGPSEnabled());
+        mSensorReader.setSampleRate(sensorReaderSampleRate);
         mSensorReader.start(getLooper());
         raiseOnLocationEevnt(null, -1);
         Log.d(TAG, text);
@@ -135,13 +159,27 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         }
         intent.putExtra(PARAM_SECONDS_LOCATION, secondsSinceLastRead);
         broadcastManager.sendBroadcast(intent);
-        Toast.makeText(mContext, "Location", Toast.LENGTH_SHORT).show();
     }
+
+    private void raiseOnSampleRateChangeEvent(int sampleRate) {
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(mContext);
+        Intent intent = new Intent(ON_EVENT_SAMPLE_RATE);
+        intent.putExtra(PARAM_SAMPLE_RATE, sampleRate);
+        broadcastManager.sendBroadcast(intent);
+    }
+
 
     @Override
     public boolean onCacheFull(EventDataList eventDataList) {
-        Log.d(TAG, "on cache full");
+        float movementRate = eventDataList.getMovementRate() * 100;
+        if ( movementRate > getMaxMotionRate()) {
+            setMaxMotionRate(movementRate);
+            // if going up then test to see if we also need to increase the sample rate
+            autoChangeSampleRate();
+        }
+        Log.d(TAG, "on cache full. Movement rate: " + movementRate);
         EventDataCacheService.requestEventDataSave(mContext, eventDataList);
+
         return true;
     }
 
@@ -155,16 +193,54 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         }
         mLastLocationTime = now;
         raiseOnLocationEevnt(location, secondsSinceLastRead);
-
     }
 
     protected synchronized void setState(int state) {
         mState = state;
-        if ( STATE_READ == mState) {
-            startReadingSenors();
+        if ( mState == STATE_OFF) {
+            stopReadingSensors();
         }
         else {
-            stopReadingSensors();
+            startReadingSenors(getSampleRate());
+        }
+    }
+
+    protected synchronized void setSampleRate(int sampleRate) {
+        if ( mSampleRate != sampleRate) {
+            raiseOnSampleRateChangeEvent(sampleRate);
+        }
+        mSampleRate = sampleRate;
+        if ( mSensorReader.isSensorsEnabled()) {
+            mSensorReader.updateSampleRate(mSampleRate);
+        }
+    }
+
+    protected synchronized int getSampleRate() {
+        return mSampleRate;
+    }
+
+    protected synchronized float getMaxMotionRate(){
+        return mMaxMotionRate;
+    }
+    protected synchronized void setMaxMotionRate(float value) {
+        mMaxMotionRate = value;
+    }
+
+    protected int calculateSampleRateBasedOnMovementRate(float movementRate) {
+        int result = SensorReader.SENSOR_READER_SAMPLE_RATE_SLEEPING;
+        if ( movementRate > MINIMUM_MOVEMENT_RATE_ACTIVE) {
+            result = SensorReader.SENSOR_READER_SAMPLE_RATE_ACTIVE;
+        }
+        else if ( movementRate > MINIMUM_MOVEMENT_RATE_RESTING) {
+            result = SensorReader.SENSOR_READER_SAMPLE_RATE_RESTING;
+        }
+        return result;
+    }
+
+    protected void autoChangeSampleRate() {
+        int newSampleRate = calculateSampleRateBasedOnMovementRate(mMaxMotionRate);
+        if ( newSampleRate != getSampleRate()) {
+            setSampleRate(newSampleRate);
         }
     }
 

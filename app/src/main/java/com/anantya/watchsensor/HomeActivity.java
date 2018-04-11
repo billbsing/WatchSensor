@@ -27,6 +27,7 @@ import com.anantya.watchsensor.data.ConfigData;
 import com.anantya.watchsensor.data.EventDataStatItem;
 import com.anantya.watchsensor.jobs.UploadDataJob;
 import com.anantya.watchsensor.libs.BatteryHelper;
+import com.anantya.watchsensor.libs.SensorReader;
 import com.anantya.watchsensor.libs.SensorReaderThread;
 import com.anantya.watchsensor.libs.WifiHelper;
 import com.anantya.watchsensor.services.EventDataCacheService;
@@ -54,15 +55,18 @@ public class HomeActivity extends Activity {
     private BroadcastReceiver mBroadcastOnEventDataCacheActionDone;
     private BroadcastReceiver mBroadcastOnUploadStart;
     private BroadcastReceiver mBroadcastOnUploadDone;
-    private BroadcastReceiver mBroadcastBatteryStatus;
+    private BroadcastReceiver mBroadcastWatchSensorServiceStateChange;
     private BroadcastReceiver mBroadcastOnLocation;
+    private BroadcastReceiver mBroadcastOnSampleRateChange;
 
 
     private ConfigData mConfigData;
     private StatusFragment mStatusFragment;
     private SettingsFragment mSettingsFragment;
     private EventDataStatItem mEventDataStatItem;
-    private boolean mIsPowered;
+    private int mWatchSensorServiceState;
+    private boolean mIsUploading;
+    private String mSampleRateText;
 
 
     @SuppressLint("MissingPermission")
@@ -76,20 +80,17 @@ public class HomeActivity extends Activity {
 //        EventDataCache.getFile(getFilesDir()).delete();
 
         mConfigData = ConfigData.createFromPreference(this);
-
 //        ConfigData.saveToPreference(this, mConfigData);
 
 
         // start the main foreground service
         WatchSensorService.start(this);
 
-        mIsPowered = BatteryHelper.isPowered(this);
-        showBatteryStatus(mIsPowered);
+        mWatchSensorServiceState = WatchSensorService.SERVICE_STATE_INIT;
+        mIsUploading = false;
+        mSampleRateText = "";
+        showStatusText();
 
-        // if on power then start up the jobs
-        if (mIsPowered) {
-//            UploadDataJob.start(this);
-        }
 
         mEventDataStatItem = new EventDataStatItem();
 
@@ -140,7 +141,8 @@ public class HomeActivity extends Activity {
         mBroadcastOnUploadStart = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                getActionBar().setSubtitle("Uploading");
+                mIsUploading = true;
+                showStatusText();
             }
         };
 
@@ -151,27 +153,21 @@ public class HomeActivity extends Activity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getStringExtra(UploadService.PARAM_ACTION_NAME);
-                boolean isPowered = BatteryHelper.isPowered(HomeActivity.this);
-                showBatteryStatus(isPowered);
+                mIsUploading = false;
+                showStatusText();
             }
         };
         broadcastManager.registerReceiver(mBroadcastOnUploadDone, new IntentFilter(UploadService.ON_ACTION_DONE));
 
         // get any battery/power changes
-        mBroadcastBatteryStatus = new BroadcastReceiver() {
+        mBroadcastWatchSensorServiceStateChange = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                boolean isPowered = BatteryHelper.isPowered(intent);
-                if (mIsPowered != isPowered) {
-                    showBatteryStatus(isPowered);
-                    mIsPowered = isPowered;
-                }
-                if (mStatusFragment != null) {
-                    mStatusFragment.setIsPowered(mIsPowered);
-                }
+                mWatchSensorServiceState = intent.getIntExtra(WatchSensorService.PARAM_SERVICE_STATE, 0);
+                showStatusText();
             }
         };
-        registerReceiver(mBroadcastBatteryStatus, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        broadcastManager.registerReceiver(mBroadcastWatchSensorServiceStateChange, new IntentFilter(WatchSensorService.ON_EVENT_SERVICE_STATE_CHANGED));
 
         mBroadcastOnLocation = new BroadcastReceiver() {
             @Override
@@ -179,24 +175,44 @@ public class HomeActivity extends Activity {
                 long secondsSinceLastLocationRead = intent.getLongExtra(SensorReaderThread.PARAM_SECONDS_LOCATION, 0);
 
                 if ( secondsSinceLastLocationRead >= 0 ) {
-                    Toast.makeText(HomeActivity.this, "Location "+ secondsSinceLastLocationRead, Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(HomeActivity.this, "Location "+ secondsSinceLastLocationRead, Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    Toast.makeText(HomeActivity.this, "GPS Active", Toast.LENGTH_LONG).show();
+//                    Toast.makeText(HomeActivity.this, "GPS Active", Toast.LENGTH_LONG).show();
                 }
-                /*
-                if ( mStatusFragment != null) {
-                    long secondsSinceLastLocionRead = intent.getLongExtra(WatchSensorService.PARAM_SECONDS_LOCATION, 0);
-                    mStatusFragment.setInformation(String.format(Locale.UK, "%d seconds location", secondsSinceLastLocionRead));
-               }
-*/
             }
         };
-        registerReceiver(mBroadcastOnLocation, new IntentFilter(SensorReaderThread.ON_EVENT_LOCATION));
+        broadcastManager.registerReceiver(mBroadcastOnLocation, new IntentFilter(SensorReaderThread.ON_EVENT_LOCATION));
+
+
+
+        mBroadcastOnSampleRateChange = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "Received onSampleRateChange event");
+                int sampleRate = intent.getIntExtra(SensorReaderThread.PARAM_SAMPLE_RATE, 0);
+                mSampleRateText = "";
+                switch(sampleRate) {
+                    case SensorReader.SENSOR_READER_SAMPLE_RATE_ACTIVE:
+                        mSampleRateText = "Active";
+                        break;
+                    case SensorReader.SENSOR_READER_SAMPLE_RATE_RESTING:
+                        mSampleRateText = "Idle";
+                        break;
+                    case SensorReader.SENSOR_READER_SAMPLE_RATE_SLEEPING:
+                        mSampleRateText = "Sleeping";
+                        break;
+                    default:
+                        break;
+                }
+                showStatusText();
+            }
+        };
+        broadcastManager.registerReceiver(mBroadcastOnSampleRateChange, new IntentFilter(SensorReaderThread.ON_EVENT_SAMPLE_RATE));
 
         EventDataCacheService.requestEventDataStats(this);
 
-
+        WatchSensorService.requestServiceState(this);
 //        NetworkDiscoverService.requestListen(this);
     }
 
@@ -209,9 +225,11 @@ public class HomeActivity extends Activity {
         broadcastManager.unregisterReceiver(mBroadcastOnEventDataCacheActionDone);
         broadcastManager.unregisterReceiver(mBroadcastOnUploadStart);
         broadcastManager.unregisterReceiver(mBroadcastOnUploadDone);
+        broadcastManager.unregisterReceiver(mBroadcastWatchSensorServiceStateChange);
         broadcastManager.unregisterReceiver(mBroadcastOnLocation);
-        unregisterReceiver(mBroadcastBatteryStatus);
+        broadcastManager.unregisterReceiver(mBroadcastOnSampleRateChange);
 
+        Log.d(TAG, "unregister events");
 //        NetworkDiscoverService.stopListen(this);
     }
 
@@ -234,9 +252,9 @@ public class HomeActivity extends Activity {
         item = menu.findItem(R.id.action_settings);
         item.setVisible( fragmentManager.getBackStackEntryCount() == 0 );
         item = menu.findItem(R.id.action_upload);
-        item.setEnabled(mIsPowered);
+        item.setEnabled(mWatchSensorServiceState == WatchSensorService.SERVICE_STATE_UPLOADING);
         item = menu.findItem(R.id.action_purge);
-        item.setEnabled(mIsPowered);
+        item.setEnabled(mWatchSensorServiceState == WatchSensorService.SERVICE_STATE_UPLOADING);
         return true;
     }
 
@@ -284,17 +302,24 @@ public class HomeActivity extends Activity {
 
     }
 
-
-    protected void showBatteryStatus(boolean isPluggedIn) {
-        try {
-            String statusText = getString(R.string.status_recording);
-            if (isPluggedIn) {
-                statusText = getString(R.string.status_sleeping);
+    protected void showStatusText() {
+        String text = "Unknown";
+        if ( mWatchSensorServiceState == WatchSensorService.SERVICE_STATE_UPLOADING) {
+            text = "Base Station";
+            if ( mIsUploading){
+                text += ": Uploading";
             }
-            getActionBar().setSubtitle(statusText);
-        } catch (NullPointerException e) {
-
         }
+        else {
+            text = "Recording";
+            if ( mSampleRateText.length() > 0 ) {
+                text += ": " + mSampleRateText;
+            }
+        }
+        if ( mStatusFragment != null) {
+            mStatusFragment.setUploadingView(mWatchSensorServiceState == WatchSensorService.SERVICE_STATE_UPLOADING);
+        }
+        getActionBar().setSubtitle(text);
     }
 
 
