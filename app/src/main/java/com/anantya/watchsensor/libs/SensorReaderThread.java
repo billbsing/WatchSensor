@@ -136,10 +136,11 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         ConfigData configData = ConfigData.createFromPreference(mContext);
         String text = "Sensor reader on";
         mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
-        mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
-        Log.d(TAG, "GPS " + configData.isGPSEnabled());
-        mSensorReader.setGPSEnabled(configData.isGPSEnabled());
         mSensorReader.setSampleRate(sensorReaderSampleRate);
+        mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
+        mSensorReader.setLocationMinimumTime(configData.getLocationMinimumTime());
+        mSensorReader.setLocationMinimumDistance(configData.getLocationMinimumDistance());
+        mSensorReader.setGPSEnabled(configData.isGPSEnabled());
         mSensorReader.start(getLooper());
         raiseOnLocationEevnt(null, -1);
         Log.d(TAG, text);

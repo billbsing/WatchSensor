@@ -13,16 +13,25 @@ public class SensorFrequency {
     private boolean mIsEnabled;
     private int mReadSeconds;
     private int mDelaySeconds;
+    private boolean mIsActive;              // if delay or read seconds are == 0 then not active
 
     public SensorFrequency(boolean isEnabled) {
         // set Active, and defaults to continous reading
         mIsEnabled = isEnabled;
         mReadTimeout = 0;
         mDelayTimeout = 0;
+        mIsActive = false;
     }
 
     public boolean isEnabled() { return mIsEnabled;}
     public void setEnabled(boolean value) { mIsEnabled = value; }
+
+    public boolean isActive() {
+        return mIsActive;
+    }
+    public void setActive(boolean value) {
+        mIsActive = value;
+    }
 
     public int getReadSeconds() { return mReadSeconds;}
     public void setReadSeconds(int value) { mReadSeconds = value;}
@@ -33,6 +42,7 @@ public class SensorFrequency {
     public void setFrequency(int readSeconds, int delaySeconds) {
         mReadSeconds = readSeconds;
         mDelaySeconds = delaySeconds;
+        mIsActive = (mDelaySeconds > 0);
     }
 
     public void startReading() {

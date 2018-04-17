@@ -54,6 +54,8 @@ public class SensorReader implements SensorEventListener, FrizzListener, Locatio
     private Lock mProcessLock;
     private LocationManager mLocationManager;
     private int mSampleRate;
+    private long mLocationMinimumTime;
+    private long mLocationMinimumDistance;
 
     public static final int SENSOR_READER_SAMPLE_RATE_ACTIVE = SensorManager.SENSOR_DELAY_GAME;
     public static final int SENSOR_READER_SAMPLE_RATE_RESTING = SensorManager.SENSOR_DELAY_UI;
@@ -97,8 +99,8 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     private static final int MAX_CACHE_SIZE = 100000;                                 // when the record count > then call a cache timeout
     private static final long CACHE_TIMOUT = DateUtils.SECOND_IN_MILLIS * 10;         // every ten seconds call a cache timeout
 
-    private static final long LOCATION_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 10;
-    private static final long LOCATION_MINIMUM_DISTANCE = 1;
+    private static final long LOCATION_DEFAULT_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 10;
+    private static final long LOCATION_DEFAULT_MINIMUM_DISTANCE = 1;
 
     public SensorReader(Context context, SensorReaderListener listener) {
         mListener = listener;
@@ -116,6 +118,8 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
         mSampleRate = SENSOR_READER_SAMPLE_RATE_SLEEPING;
 
         mLocationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        mLocationMinimumDistance = LOCATION_DEFAULT_MINIMUM_DISTANCE;
+        mLocationMinimumTime = LOCATION_DEFAULT_MINIMUM_TIME;
 
     }
 
@@ -155,7 +159,7 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
             Log.d(TAG, "GPS Requested");
             Criteria criteria = new Criteria();
 //            criteria.setAccuracy(Criteria.ACCURACY_COARSE);
-            mLocationManager.requestLocationUpdates(LOCATION_MINIMUM_TIME, LOCATION_MINIMUM_DISTANCE, criteria, this, looper);
+            mLocationManager.requestLocationUpdates(mLocationMinimumTime, mLocationMinimumDistance, criteria, this, looper);
 //            mLocationManager.requestSingleUpdate(criteria, this, looper);
         }
     }
@@ -180,8 +184,8 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     }
 
     public void checkDelayReading() {
-        // only heart rate can be turned on/off for delay reads
-        if ( mHeartRateFrequency.isEnabled()) {
+        // only heart rate can be turned on/off for delay reads if enabled and active
+        if ( mHeartRateFrequency.isEnabled() && mHeartRateFrequency.isActive()) {
             if ( mHeartRateFrequency.isReadingFinished()) {
                 heartRateStop();
                 mHeartRateFrequency.stopReading();
@@ -198,7 +202,9 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     public boolean isSensorsEnabled() { return mSensorFrequency.isEnabled(); }
     public void setSenorsEnabled(boolean value) { mSensorFrequency.setEnabled(value); }
 
-    public void setHeartRateFrequency(int readSeconds, int delaySeconds) { mHeartRateFrequency.setFrequency(readSeconds, delaySeconds); }
+    public void setHeartRateFrequency(int readSeconds, int delaySeconds) {
+        mHeartRateFrequency.setFrequency(readSeconds, delaySeconds);
+    }
 
     public boolean isGPSEnabled() { return mGPSFrequency.isEnabled();}
     public void setGPSEnabled(boolean value) { mGPSFrequency.setEnabled(value); }
@@ -206,6 +212,18 @@ Accelerometer, SENSOR_DELAY_NORMAL: 215-230 ms
     public int getSampleRate() { return mSampleRate;}
     public void setSampleRate(int value) { mSampleRate = value; }
 
+    public long getLocationMinimumTime() {
+        return mLocationMinimumTime;
+    }
+    public void setLocationMinimumTime(long value) {
+        mLocationMinimumTime = value;
+    }
+    public long getLocationMinimumDistance() {
+        return mLocationMinimumDistance;
+    }
+    public void setLocationMinimumDistance(long value) {
+        mLocationMinimumDistance = value;
+    }
 
     protected synchronized void processCacheFinished() {
         if ( mEventDataList.getItems().size() >= MAX_CACHE_SIZE || mCacheTimeoutTime < System.currentTimeMillis()) {

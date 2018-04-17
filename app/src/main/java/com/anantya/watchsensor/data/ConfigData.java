@@ -13,6 +13,7 @@ import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
+import android.text.format.DateUtils;
 
 import com.anantya.watchsensor.R;
 
@@ -35,6 +36,9 @@ public class ConfigData implements Parcelable {
     private boolean mIsTrackingEnabled;
     private int mHeartRateFrequency;
     private boolean mIsGPSEnabled;
+    private long mLocationMinimumTime;
+    private long mLocationMinimumDistance;
+
 
 
     private static final String PREFERENCE_FILENAME = "ConfigData";
@@ -50,6 +54,8 @@ public class ConfigData implements Parcelable {
     public static final String PREFERENCE_IS_TRACKING_ENABLED = "is_tracking_enabled";
     public static final String PREFERENCE_HEART_RATE_FREQUENCY = "heart_rate_frequency";
     public static final String PREFERENCE_IS_GPS_ENABLED = "is_gps_enabled";
+    public static final String PREFERENCE_LOCATION_MINIMUM_TIME = "location_minimum_time";
+    public static final String PREFERENCE_LOCATION_MINIMUM_DISTANCE = "location_minimum_distance";
 
 
 
@@ -63,6 +69,8 @@ public class ConfigData implements Parcelable {
     private static final int DEFAULT_HEART_RATE_READ_MINIMUM_FREQUENCY = 10;        // default to read heart rate for 10 seconds if < 1 minute
     private static final boolean DEFAULT_IS_TRACKING_ENABLED = true;
     private static final boolean DEFAULT_IS_GPS_ENABLED = true;
+    private static long DEFAULT_LOCATION_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 60;
+    private static long DEFAULT_LOCATION_MINIMUM_DISTANCE = 1;
 
 
 
@@ -97,6 +105,8 @@ public class ConfigData implements Parcelable {
         mIsTrackingEnabled = configData.isTrackingEnabled();
         mHeartRateFrequency = configData.getHeartRateFrequency();
         mIsGPSEnabled = configData.isGPSEnabled();
+        mLocationMinimumTime = configData.getLocationMinimumTime();
+        mLocationMinimumDistance = configData.getLocationMinimumDistance();
     }
 
     public void clear() {
@@ -109,6 +119,8 @@ public class ConfigData implements Parcelable {
         mIsTrackingEnabled = DEFAULT_IS_TRACKING_ENABLED;
         mHeartRateFrequency = DEFAULT_HEART_RATE_FREQUENCY;
         mIsGPSEnabled = false;
+        mLocationMinimumTime = DEFAULT_LOCATION_MINIMUM_TIME;
+        mLocationMinimumDistance = DEFAULT_LOCATION_MINIMUM_DISTANCE;
     }
 
     public String getWatchId() {
@@ -180,6 +192,21 @@ public class ConfigData implements Parcelable {
     public boolean isGPSEnabled() { return mIsGPSEnabled; }
     public void setGPSEnabled(boolean value) { mIsGPSEnabled = value; }
 
+    public long getLocationMinimumDistance() {
+        return mLocationMinimumDistance;
+    }
+
+    public void setLocationMinimumDistance(long value ) {
+        mLocationMinimumDistance = value;
+    }
+
+    public long getLocationMinimumTime() {
+        return mLocationMinimumTime;
+    }
+    public void setLocationMinimumTime(long value) {
+        mLocationMinimumTime = value;
+    }
+
     public void assignDefaults(Context context) {
         setWatchId(getDefaultWatchId(context));
         setKeyname(DEFAULT_KEY_NAME);
@@ -189,6 +216,8 @@ public class ConfigData implements Parcelable {
         setTrackingEnabled(DEFAULT_IS_TRACKING_ENABLED);
         setHeartRateFrequency(DEFAULT_HEART_RATE_FREQUENCY);
         setGPSEnabled(DEFAULT_IS_GPS_ENABLED);
+        setLocationMinimumTime(DEFAULT_LOCATION_MINIMUM_TIME);
+        setLocationMinimumDistance(DEFAULT_LOCATION_MINIMUM_DISTANCE);
         saveToPreference(context, this);
     }
 
@@ -216,6 +245,8 @@ public class ConfigData implements Parcelable {
 
         mIsTrackingEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_TRACKING_ENABLED, DEFAULT_IS_TRACKING_ENABLED );
         mIsGPSEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_GPS_ENABLED, DEFAULT_IS_GPS_ENABLED );
+        mLocationMinimumTime = sharedPreferences.getLong(PREFERENCE_LOCATION_MINIMUM_TIME, DEFAULT_LOCATION_MINIMUM_TIME);
+        mLocationMinimumDistance = sharedPreferences.getLong(PREFERENCE_LOCATION_MINIMUM_DISTANCE, DEFAULT_LOCATION_MINIMUM_DISTANCE);
     }
 
     public void wirteToPreference(SharedPreferences sharedPreferences) {
@@ -229,6 +260,8 @@ public class ConfigData implements Parcelable {
         editor.putString(PREFERENCE_HEART_RATE_FREQUENCY, String.valueOf(mHeartRateFrequency));
         editor.putBoolean(PREFERENCE_IS_GPS_ENABLED, mIsGPSEnabled);
         editor.putBoolean(PREFERENCE_IS_TRACKING_ENABLED, mIsTrackingEnabled);
+        editor.putLong(PREFERENCE_LOCATION_MINIMUM_TIME, mLocationMinimumTime);
+        editor.putLong(PREFERENCE_LOCATION_MINIMUM_DISTANCE, mLocationMinimumDistance);
 
         editor.apply();
     }
@@ -248,6 +281,8 @@ public class ConfigData implements Parcelable {
                 && configData.isTrackingEnabled() == isTrackingEnabled()
                 && configData.getHeartRateFrequency() == getHeartRateFrequency()
                 && configData.isGPSEnabled() == isGPSEnabled()
+                && configData.getLocationMinimumTime() == getLocationMinimumTime()
+                && configData.getLocationMinimumDistance() == getLocationMinimumDistance()
                 ;
     }
 
@@ -261,6 +296,8 @@ public class ConfigData implements Parcelable {
         mIsTrackingEnabled = in.readByte() != 0;
         mHeartRateFrequency = in.readInt();
         mIsGPSEnabled = in.readByte() != 0;
+        mLocationMinimumTime = in.readLong();
+        mLocationMinimumDistance = in.readLong();
     }
 
     public static final Creator<ConfigData> CREATOR = new Creator<ConfigData>() {
@@ -292,6 +329,8 @@ public class ConfigData implements Parcelable {
         dest.writeByte((byte) (mIsTrackingEnabled ? 1: 0));
         dest.writeInt(mHeartRateFrequency);
         dest.writeByte((byte) (mIsGPSEnabled ? 1: 0));
+        dest.writeLong(mLocationMinimumTime);
+        dest.writeLong(mLocationMinimumDistance);
     }
 
 }
