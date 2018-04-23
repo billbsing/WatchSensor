@@ -25,7 +25,7 @@ public class BatteryHelper {
             result = true;
         }
 // testing: force to always use battery
-        result = false;
+//        result = false;
         return result;
     }
 

@@ -81,7 +81,9 @@ public class HomeActivity extends Activity {
 //        EventDataCache.getFile(getFilesDir()).delete();
 
         mConfigData = ConfigData.createFromPreference(this);
-//        ConfigData.saveToPreference(this, mConfigData);
+        if ( mConfigData.isNewVersion()) {
+            ConfigData.saveToPreference(this, mConfigData);
+        }
 
 
         // start the main foreground service
