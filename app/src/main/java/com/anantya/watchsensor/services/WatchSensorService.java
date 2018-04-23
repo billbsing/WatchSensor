@@ -113,12 +113,15 @@ public class WatchSensorService extends Service {
                     Log.d(TAG, "Reloading");
                     stopReadingSensors();
                     stopUploading();
+                    setServiceState(SERVICE_STATE_INIT);
                     mSensorReaderThread.sendReload();
+                    sendCheckState();
                 }
                 else if ( message.what == MESSAGE_CHECK_STATE) {
                     checkServiceState();
                     checkUploadService();
                 }
+//                Log.d(TAG, "message " + message.toString());
             }
         }
 
@@ -201,7 +204,7 @@ public class WatchSensorService extends Service {
             setServiceState(SERVICE_STATE_INIT);
             Log.d(TAG, "starting");
             setStartId(startId);
-            mCheckTimer = new Timer();
+            mCheckTimer = new Timer("WatchDogCheck", true);
             mCheckTimer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
