@@ -25,6 +25,7 @@
     <string name="status_fragment_uploaded">Uploaded</string>
     <string name="status_fragment_uploaded_default_value">0</string>
     <string name="status_fragment_info">Info</string>
+    <string name="status_fragment_movement">Movement</string>
 
 
     <string name="settings_fragment_title">Settings</string>
@@ -87,6 +88,58 @@
         <item>12000</item>
     </string-array>
     <string name="preference_heart_rate_default">0</string>
+
+    <string name="preference_location_distance_title">GPS Min. Distance</string>
+    <string-array name="preference_location_distance_options">
+        <item>1 meter</item>
+        <item>2 meters</item>
+        <item>4 meters</item>
+        <item>6 meters</item>
+        <item>8 meters</item>
+        <item>10 meters</item>
+        <item>20 meters</item>
+        <item>40 meters</item>
+        <item>50 meters</item>
+    </string-array>
+    <string-array name="preference_location_distance_values">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>
+        <item>6</item>
+        <item>8</item>
+        <item>10</item>
+        <item>20</item>
+        <item>40</item>
+        <item>50</item>
+    </string-array>
+    <string name="preference_location_distance_default">10</string>
+
+
+    <string name="preference_location_time_title">GPS Min. Time</string>
+    <string-array name="preference_location_time_options">
+        <item>1 second</item>
+        <item>30 seconds</item>
+        <item>1 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>30 Minutes</item>
+        <item>1 Hour</item>
+        <item>2 Hours</item>
+    </string-array>
+    <string-array name="preference_location_time_values">
+        <item>1000</item>
+        <item>30000</item>
+        <item>60000</item>
+        <item>350000</item>
+        <item>600000</item>
+        <item>900000</item>
+        <item>1800000</item>
+        <item>6000000</item>
+        <item>12000000</item>
+    </string-array>
+    <string name="preference_location_time_default">600000</string>
+
 
     <string name="preference_group_version">Version</string>
 </resources>

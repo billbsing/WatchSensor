@@ -69,8 +69,8 @@ public class ConfigData implements Parcelable {
     private static final int DEFAULT_HEART_RATE_READ_MINIMUM_FREQUENCY = 10;        // default to read heart rate for 10 seconds if < 1 minute
     private static final boolean DEFAULT_IS_TRACKING_ENABLED = true;
     private static final boolean DEFAULT_IS_GPS_ENABLED = true;
-    private static long DEFAULT_LOCATION_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 60;
-    private static long DEFAULT_LOCATION_MINIMUM_DISTANCE = 1;
+    private static final long DEFAULT_LOCATION_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 60;
+    private static final long DEFAULT_LOCATION_MINIMUM_DISTANCE = 1;
 
 
 
@@ -176,19 +176,8 @@ public class ConfigData implements Parcelable {
         }
         return value;
     }
-    public String getHeartRateAsString(Context context) {
-        String result = "";
-        Preference preference;
-        String [] textItems = context.getResources().getStringArray(R.array.preference_heart_rate_options);
-        String [] valueItems = context.getResources().getStringArray(R.array.preference_heart_rate_values);
-        for ( int index = 0;  index < valueItems.length; index ++) {
-            if ( Integer.parseInt(valueItems[index]) == getHeartRateFrequency()) {
-                result = textItems[index];
-                break;
-            }
-        }
-        return result;
-    }
+
+
     public boolean isGPSEnabled() { return mIsGPSEnabled; }
     public void setGPSEnabled(boolean value) { mIsGPSEnabled = value; }
 
@@ -233,6 +222,7 @@ public class ConfigData implements Parcelable {
         return result;
     }
 
+
     public void readFromPreference(SharedPreferences sharedPreferences) {
         mWatchId = sharedPreferences.getString(PREFERENCE_WATCH_ID, "");
         mPrimanryKey = sharedPreferences.getString(PREFERENCE_PRIMARY_KEY, "");
@@ -245,8 +235,14 @@ public class ConfigData implements Parcelable {
 
         mIsTrackingEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_TRACKING_ENABLED, DEFAULT_IS_TRACKING_ENABLED );
         mIsGPSEnabled = sharedPreferences.getBoolean(PREFERENCE_IS_GPS_ENABLED, DEFAULT_IS_GPS_ENABLED );
-        mLocationMinimumTime = sharedPreferences.getLong(PREFERENCE_LOCATION_MINIMUM_TIME, DEFAULT_LOCATION_MINIMUM_TIME);
-        mLocationMinimumDistance = sharedPreferences.getLong(PREFERENCE_LOCATION_MINIMUM_DISTANCE, DEFAULT_LOCATION_MINIMUM_DISTANCE);
+        try {
+            mLocationMinimumTime = Long.parseLong(sharedPreferences.getString(PREFERENCE_LOCATION_MINIMUM_TIME, String.valueOf(DEFAULT_LOCATION_MINIMUM_TIME)));
+            mLocationMinimumDistance = Long.parseLong(sharedPreferences.getString(PREFERENCE_LOCATION_MINIMUM_DISTANCE, String.valueOf(DEFAULT_LOCATION_MINIMUM_DISTANCE)));
+        }
+        catch ( Exception e) {
+            mLocationMinimumDistance = DEFAULT_LOCATION_MINIMUM_DISTANCE;
+            mLocationMinimumTime = DEFAULT_LOCATION_MINIMUM_TIME;
+        }
     }
 
     public void wirteToPreference(SharedPreferences sharedPreferences) {

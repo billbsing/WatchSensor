@@ -180,6 +180,29 @@
                         android:layout_weight="1"
                         android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
                 </TableRow>
+                <TableRow
+                    android:id="@+id/tableRowMovement"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:id="@+id/textViewMovementTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/status_fragment_movement"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
+
+                    <TextView
+                        android:id="@+id/textViewMovement"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_gravity="right"
+                        android:text="@string/status_fragment_uploaded_default_value"
+                        android:textAlignment="textEnd"
+                        android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
+                </TableRow>
+
 
                 <TableRow
                     android:layout_width="match_parent"

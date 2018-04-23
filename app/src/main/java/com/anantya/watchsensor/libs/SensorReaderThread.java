@@ -50,6 +50,7 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
     private static final int MESSAGE_STOP = 0x02;
     private static final int MESSAGE_SET_STATE = 0x03;
     private static final int MESSAGE_CHECK_READER = 0x04;
+    private static final int MESSAGE_RELOAD = 0x05;
 
     private static final String TAG = "SensorReaderHandler";
 
@@ -62,6 +63,7 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
     private int mSampleRate;
     private float mMaxMotionRate;
     private Timer mCheckTimer;
+    private float mMovementRate;
 
 
     public static SensorReaderThread init(Context context) {
@@ -86,7 +88,11 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
                     @Override
                     public void run() {
                         // reset for the next data event to check for the correct sample rate
-                        setMaxMotionRate(0);
+                        float value = getMaxMotionRate() / 2;
+                        if ( value < 0.1) {
+                            value = 0;
+                        }
+                        setMaxMotionRate(value);
                     }
                 }, CHECK_SAMPLE_RATE_PERIOD, CHECK_SAMPLE_RATE_PERIOD);
 
@@ -107,6 +113,9 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
                 if ( mSensorReader != null ) {
                     mSensorReader.checkDelayReading();
                 }
+            }
+            else if ( message.what == MESSAGE_RELOAD) {
+                setupSensors(getSampleRate());
             }
         }
     }
@@ -133,18 +142,21 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
 
 
     private void startReadingSenors(int sensorReaderSampleRate) {
+        setupSensors(sensorReaderSampleRate);
+        mSensorReader.start(getLooper());
+        raiseOnLocationEevnt(null, -1);
+        Log.d(TAG, "Sensor reader on");
+
+    }
+
+    private void setupSensors(int sensorReaderSampleRate) {
         ConfigData configData = ConfigData.createFromPreference(mContext);
-        String text = "Sensor reader on";
         mSensorReader.setSenorsEnabled(configData.isTrackingEnabled());
         mSensorReader.setSampleRate(sensorReaderSampleRate);
         mSensorReader.setHeartRateFrequency(configData.getHeartRateReadFrequency(), configData.getHeartRateFrequency());
         mSensorReader.setLocationMinimumTime(configData.getLocationMinimumTime());
         mSensorReader.setLocationMinimumDistance(configData.getLocationMinimumDistance());
         mSensorReader.setGPSEnabled(configData.isGPSEnabled());
-        mSensorReader.start(getLooper());
-        raiseOnLocationEevnt(null, -1);
-        Log.d(TAG, text);
-
     }
 
     private void stopReadingSensors() {
@@ -169,6 +181,13 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         broadcastManager.sendBroadcast(intent);
     }
 
+    private void raiseOnMovementRateChangeEvent(float movementRate) {
+        LocalBroadcastManager broadcastManager = LocalBroadcastManager.getInstance(mContext);
+        Intent intent = new Intent(ON_EVENT_MOVEMENT_RATE);
+        intent.putExtra(PARAM_MOVEMENT_RATE, movementRate);
+        broadcastManager.sendBroadcast(intent);
+    }
+
 
     @Override
     public boolean onCacheFull(EventDataList eventDataList) {
@@ -180,7 +199,7 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         }
         Log.d(TAG, "on cache full. Movement rate: " + movementRate);
         EventDataCacheService.requestEventDataSave(mContext, eventDataList);
-
+        setMovementRate(movementRate);
         return true;
     }
 
@@ -220,10 +239,21 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         return mSampleRate;
     }
 
+    protected synchronized  float getMovementRate() {
+        return mMovementRate;
+    }
+
+    protected synchronized  void setMovementRate(float value) {
+        mMovementRate = value;
+    }
+
     protected synchronized float getMaxMotionRate(){
         return mMaxMotionRate;
     }
     protected synchronized void setMaxMotionRate(float value) {
+        if ( mMaxMotionRate != value) {
+            raiseOnMovementRateChangeEvent(value);
+        }
         mMaxMotionRate = value;
     }
 
@@ -264,5 +294,11 @@ public class SensorReaderThread extends HandlerThread implements SensorReader.Se
         Message message = mHandler.obtainMessage(MESSAGE_CHECK_READER);
         mHandler.sendMessage(message);
     }
+
+    public void sendReload() {
+        Message message = mHandler.obtainMessage(MESSAGE_RELOAD);
+        mHandler.sendMessage(message);
+    }
+
 
 }

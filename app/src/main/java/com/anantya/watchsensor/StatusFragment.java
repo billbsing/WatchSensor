@@ -11,6 +11,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.anantya.watchsensor.data.EventDataStatItem;
+import com.anantya.watchsensor.data.StatusData;
 
 import java.util.Locale;
 
@@ -28,7 +29,11 @@ public class StatusFragment extends Fragment {
     private TextView mBatteryStatus;
     private TextView mWifiStatus;
     private TextView mTextViewInformation;
+    private TextView mTextViewMovement;
 
+    private StatusData mStatusData;
+
+    private final String PARAM_STATUS_DATA = "StatusFragment.status_data";
 
     private OnFragmentInteractionListener mListener;
 
@@ -46,8 +51,17 @@ public class StatusFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mStatusData = new StatusData();
+        if ( savedInstanceState != null) {
+            mStatusData = savedInstanceState.getParcelable(PARAM_STATUS_DATA);
+        }
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        savedInstanceState.putParcelable(PARAM_STATUS_DATA, mStatusData);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,12 +77,12 @@ public class StatusFragment extends Fragment {
         mTextViewUploadDone = ( TextView ) view.findViewById(R.id.textViewUploadDone);
         mTextViewPercentDone = ( TextView ) view.findViewById(R.id.textViewPercentDone);
         mTextViewInformation = ( TextView ) view.findViewById(R.id.textViewInformation);
+        mTextViewMovement = ( TextView ) view.findViewById(R.id.textViewMovement);
         mProgressBar = (ProgressBar) view.findViewById(R.id.progressBar);
 
-        // hide the total line
-        view.findViewById(R.id.tableRowTotal).setVisibility(View.GONE);
-        // hide the information line
-        view.findViewById(R.id.tableRowInformation).setVisibility(View.GONE);
+
+        fillViews(mStatusData);
+        setUploadingView(mStatusData.isUploading());
 
         return view;
     }
@@ -85,28 +99,28 @@ public class StatusFragment extends Fragment {
         mListener = null;
     }
 
-    public void setValues(EventDataStatItem item, String wifiStatus, String batteryStatus) {
-
-        mWifiStatus.setText(wifiStatus);;
-        mBatteryStatus.setText(batteryStatus);
-        mTextViewTotalStats.setText( String.format(Locale.UK, "%,d", item.getTotal()));
-        mTextViewUploadWait.setText(String.format(Locale.UK, "%,d", item.getUploadWait()));
-        mTextViewUploadProcessing.setText(String.format(Locale.UK, "%,d", item.getUploadProcessing()));
-        mTextViewUploadDone.setText(String.format(Locale.UK, "%,d", item.getUploadDone()));
-        mProgressBar.setMax((int) item.getTotal());
-        mProgressBar.setProgress((int) item.getUploadDone());
-        double total = item.getTotal();
-        double done = item.getUploadDone();
-        double percentDone = 0;
-        if ( total > 0.0 && done > 0.0 ) {
-
-            percentDone = ( done / total ) * 100;
-        }
-        mTextViewPercentDone.setText(String.format(Locale.UK, "%.0f%%", percentDone));
+    @Override
+    public void onResume() {
+        super.onResume();
+        fillViews(mStatusData);
+        setUploadingView(mStatusData.isUploading());
     }
 
+    protected void fillViews(StatusData statusData) {
 
-    public void setUploadingView(boolean value) {
+        mWifiStatus.setText(statusData.getWifiStatus());
+        mBatteryStatus.setText(statusData.getBatteryStatus());
+        mTextViewTotalStats.setText( String.format(Locale.UK, "%,d", statusData.getUploadTotalCount()));
+        mTextViewUploadWait.setText(String.format(Locale.UK, "%,d", statusData.getUploadWaitCount()));
+        mTextViewUploadProcessing.setText(String.format(Locale.UK, "%,d", statusData.getUploadProcessCount()));
+        mTextViewUploadDone.setText(String.format(Locale.UK, "%,d", statusData.getUploadDoneCount()));
+        mTextViewMovement.setText(String.format(Locale.UK, "%.1f", statusData.getMovementRate()));
+        mProgressBar.setMax((int) statusData.getUploadTotalCount());
+        mProgressBar.setProgress((int) statusData.getUploadDoneCount());
+        mTextViewPercentDone.setText(String.format(Locale.UK, "%.0f%%", statusData.getPerecentUploaded()));
+    }
+
+    protected void setUploadingView(boolean value) {
         mTextViewPercentDone.setVisibility(value ? View.VISIBLE : View.GONE);
         mProgressBar.setVisibility(value ? View.VISIBLE : View.GONE);
         View view = getView();
@@ -115,6 +129,15 @@ public class StatusFragment extends Fragment {
             view.findViewById(R.id.tableRowUpload).setVisibility(value ? View.VISIBLE : View.GONE);
 //            view.findViewById(R.id.tableRowInformation).setVisibility(value ? View.GONE : View.VISIBLE);
             view.findViewById(R.id.tableRowInformation).setVisibility( View.GONE);
+
+            // hide the total line
+            view.findViewById(R.id.tableRowTotal).setVisibility(View.GONE);
+            // hide the information line
+            view.findViewById(R.id.tableRowInformation).setVisibility(View.GONE);
+
+            // hide the movement line
+            view.findViewById(R.id.tableRowMovement).setVisibility(View.GONE);
+
         }
 
         if ( value ) {
@@ -124,6 +147,31 @@ public class StatusFragment extends Fragment {
             mTextViewUploadWaitTitle.setText(R.string.status_fragment_recorded);
         }
 
+
+    }
+
+    public void setUploadingVisible(boolean value) {
+        mStatusData.setUploading(value);
+        setUploadingView(value);
+    }
+
+    public void setBatteryStatus(String value) {
+        mStatusData.setBatterStatus(value);
+        fillViews(mStatusData);
+    }
+    public void setWifiStatus(String value) {
+        mStatusData.setWifiStatus(value);
+        fillViews(mStatusData);
+    }
+
+    public void assignEventDataStat(EventDataStatItem item) {
+        mStatusData.assignEventDataStat(item);
+        fillViews(mStatusData);
+    }
+
+    public void setMovementRate(float value) {
+        mStatusData.setMovementRate(value);
+        fillViews(mStatusData);
     }
 
     public void setInformation(String text) {

@@ -21,6 +21,20 @@
             android:key="is_gps_enabled"
             android:title="@string/preference_gps_enabled" />
         <ListPreference
+            android:defaultValue="@string/preference_location_distance_default"
+            android:entries="@array/preference_location_distance_options"
+            android:entryValues="@array/preference_location_distance_values"
+            android:key="location_minimum_distance"
+            android:title="@string/preference_location_distance_title" />
+
+        <ListPreference
+            android:defaultValue="@string/preference_location_time_default"
+            android:entries="@array/preference_location_time_options"
+            android:entryValues="@array/preference_location_time_values"
+            android:key="location_minimum_time"
+            android:title="@string/preference_location_time_title" />
+
+        <ListPreference
             android:defaultValue="@string/preference_heart_rate_default"
             android:entries="@array/preference_heart_rate_options"
             android:entryValues="@array/preference_heart_rate_values"

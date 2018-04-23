@@ -58,6 +58,7 @@ public class HomeActivity extends Activity {
     private BroadcastReceiver mBroadcastWatchSensorServiceStateChange;
     private BroadcastReceiver mBroadcastOnLocation;
     private BroadcastReceiver mBroadcastOnSampleRateChange;
+    private BroadcastReceiver mBroadcastOnMovementRateChange;
 
 
     private ConfigData mConfigData;
@@ -132,7 +133,9 @@ public class HomeActivity extends Activity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 mEventDataStatItem = intent.getParcelableExtra(EventDataCacheService.PARAM_EVENT_DATA_STATS_ITEM);
-                assignStatusFragmentValues();
+                if ( mStatusFragment != null) {
+                    mStatusFragment.assignEventDataStat(mEventDataStatItem);
+                }
             }
         };
         broadcastManager.registerReceiver(mBroadcastOnEventDataCacheActionDone, new IntentFilter(EventDataCacheService.ON_ACTION_DONE));
@@ -173,17 +176,28 @@ public class HomeActivity extends Activity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 long secondsSinceLastLocationRead = intent.getLongExtra(SensorReaderThread.PARAM_SECONDS_LOCATION, 0);
-
+/*
                 if ( secondsSinceLastLocationRead >= 0 ) {
-//                    Toast.makeText(HomeActivity.this, "Location "+ secondsSinceLastLocationRead, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(HomeActivity.this, "Location "+ secondsSinceLastLocationRead, Toast.LENGTH_SHORT).show();
                 }
                 else {
-//                    Toast.makeText(HomeActivity.this, "GPS Active", Toast.LENGTH_LONG).show();
+                    Toast.makeText(HomeActivity.this, "GPS Active", Toast.LENGTH_LONG).show();
                 }
+*/
             }
         };
         broadcastManager.registerReceiver(mBroadcastOnLocation, new IntentFilter(SensorReaderThread.ON_EVENT_LOCATION));
 
+        mBroadcastOnMovementRateChange = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                float movementRate = intent.getFloatExtra(SensorReaderThread.PARAM_MOVEMENT_RATE, 0);
+                if ( mStatusFragment != null) {
+                    mStatusFragment.setMovementRate(movementRate);
+                }
+            }
+        };
+//        broadcastManager.registerReceiver(mBroadcastOnMovementRateChange, new IntentFilter(SensorReaderThread.ON_EVENT_MOVEMENT_RATE));
 
 
         mBroadcastOnSampleRateChange = new BroadcastReceiver() {
@@ -213,6 +227,8 @@ public class HomeActivity extends Activity {
         EventDataCacheService.requestEventDataStats(this);
 
         WatchSensorService.requestServiceState(this);
+
+        showStatusText();
 //        NetworkDiscoverService.requestListen(this);
     }
 
@@ -227,6 +243,7 @@ public class HomeActivity extends Activity {
         broadcastManager.unregisterReceiver(mBroadcastOnUploadDone);
         broadcastManager.unregisterReceiver(mBroadcastWatchSensorServiceStateChange);
         broadcastManager.unregisterReceiver(mBroadcastOnLocation);
+//        broadcastManager.unregisterReceiver(mBroadcastOnMovementRateChange);
         broadcastManager.unregisterReceiver(mBroadcastOnSampleRateChange);
 
         Log.d(TAG, "unregister events");
@@ -270,7 +287,6 @@ public class HomeActivity extends Activity {
                 backPressed();
                 return true;
             case R.id.action_settings:
-
                 showSettingsFragment();
                 return true;
             case R.id.action_upload:
@@ -299,7 +315,6 @@ public class HomeActivity extends Activity {
         if (mStatusFragment != null) {
             backPressed();
         }
-
     }
 
     protected void showStatusText() {
@@ -317,7 +332,7 @@ public class HomeActivity extends Activity {
             }
         }
         if ( mStatusFragment != null) {
-            mStatusFragment.setUploadingView(mWatchSensorServiceState == WatchSensorService.SERVICE_STATE_UPLOADING);
+            mStatusFragment.setUploadingVisible(mWatchSensorServiceState == WatchSensorService.SERVICE_STATE_UPLOADING);
         }
         getActionBar().setSubtitle(text);
     }
@@ -359,9 +374,9 @@ public class HomeActivity extends Activity {
         String wifiStatus = "Disconnected";
         String batteryStatus = "0%";
         if (mStatusFragment != null) {
-            batteryStatus = String.format(Locale.UK, "%.0f%%", BatteryHelper.getBatteryPercent(this));
-            wifiStatus = WifiHelper.isConnected(this) ? getString(R.string.status_wifi_connected) : getString(R.string.status_wifi_disconnected);
-            mStatusFragment.setValues(mEventDataStatItem, wifiStatus, batteryStatus);
+            mStatusFragment.setBatteryStatus( String.format(Locale.UK, "%.0f%%", BatteryHelper.getBatteryPercent(this)));
+            mStatusFragment.setWifiStatus( WifiHelper.isConnected(this) ? getString(R.string.status_wifi_connected) : getString(R.string.status_wifi_disconnected));
+            mStatusFragment.assignEventDataStat(mEventDataStatItem);
         }
     }
 
@@ -374,6 +389,7 @@ public class HomeActivity extends Activity {
         ActionBar actionBar = getActionBar();
         actionBar.setTitle(R.string.application_title);
         actionBar.setDisplayHomeAsUpEnabled(false);
+        WatchSensorService.requestReload(this);
     }
 
 }

@@ -51,7 +51,6 @@ public class WatchSensorService extends Service {
     public static final int SERVICE_STATE_INIT =            0x01;        // not started collecting data
     public static final int SERVICE_STATE_READING =         0x02;        // reading in full active mode
     public static final int SERVICE_STATE_UPLOADING =       0x03;        // connected to base station
-    public static final int SERVICE_STATE_RELOADING =       0x04;        // reloading data, similar to _INIT
 
     private static final int MESSAGE_START = 0x01;
     private static final int MESSAGE_STOP = 0x02;
@@ -114,6 +113,7 @@ public class WatchSensorService extends Service {
                     Log.d(TAG, "Reloading");
                     stopReadingSensors();
                     stopUploading();
+                    mSensorReaderThread.sendReload();
                 }
                 else if ( message.what == MESSAGE_CHECK_STATE) {
                     checkServiceState();
@@ -141,8 +141,8 @@ public class WatchSensorService extends Service {
         }
 
         public void waitForStartup() {
-            long timeoutTime = SystemClock.currentThreadTimeMillis() + STARTUP_WAIT_TIMEOUT_TIME;
-            while ( !isRunning() && timeoutTime > SystemClock.currentThreadTimeMillis()) {
+            long timeoutTime = System.currentTimeMillis() + STARTUP_WAIT_TIMEOUT_TIME;
+            while ( !isRunning() && timeoutTime > System.currentTimeMillis()) {
                 yield();
             }
         }
@@ -160,10 +160,17 @@ public class WatchSensorService extends Service {
         public void sendServiceState(int serviceState) {
             Message message = mHandler.obtainMessage(MESSAGE_SET_STATE);
             message.arg1 = serviceState;
+            Log.d(TAG, "Sending service state message: " + String.valueOf(serviceState));
             mHandler.sendMessage(message);
         }
+
         public void sendCheckState() {
             Message message = mHandler.obtainMessage(MESSAGE_CHECK_STATE);
+            mHandler.sendMessage(message);
+        }
+
+        public void sendReload() {
+            Message message = mHandler.obtainMessage(MESSAGE_RELOAD);
             mHandler.sendMessage(message);
         }
 
@@ -211,7 +218,7 @@ public class WatchSensorService extends Service {
                     boolean isReload = intent.getBooleanExtra(PARAM_SERVICE_RELOAD, false);
                     Log.d(TAG, "reloading requested " + isReload);
                     if (isReload) {
-                        sendServiceState(SERVICE_STATE_RELOADING);
+                        sendReload();
                     }
                 }
             };
