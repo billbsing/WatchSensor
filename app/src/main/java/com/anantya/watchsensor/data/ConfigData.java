@@ -38,7 +38,10 @@ public class ConfigData implements Parcelable {
     private boolean mIsGPSEnabled;
     private long mLocationMinimumTime;
     private long mLocationMinimumDistance;
+    private int mVersion;
 
+
+    private static final int DEFAULT_CURRENT_VERSION = 2;
 
 
     private static final String PREFERENCE_FILENAME = "ConfigData";
@@ -56,6 +59,7 @@ public class ConfigData implements Parcelable {
     public static final String PREFERENCE_IS_GPS_ENABLED = "is_gps_enabled";
     public static final String PREFERENCE_LOCATION_MINIMUM_TIME = "location_minimum_time";
     public static final String PREFERENCE_LOCATION_MINIMUM_DISTANCE = "location_minimum_distance";
+    public static final String PREFERENCE_VERSION = "version";
 
 
 
@@ -72,6 +76,7 @@ public class ConfigData implements Parcelable {
     private static final long DEFAULT_LOCATION_MINIMUM_TIME = DateUtils.SECOND_IN_MILLIS * 60;
     private static final long DEFAULT_LOCATION_MINIMUM_DISTANCE = 1;
 
+    private static final int DEFAULT_VERSION = DEFAULT_CURRENT_VERSION;
 
 
     public static ConfigData createFromPreference(Context context) {
@@ -107,6 +112,7 @@ public class ConfigData implements Parcelable {
         mIsGPSEnabled = configData.isGPSEnabled();
         mLocationMinimumTime = configData.getLocationMinimumTime();
         mLocationMinimumDistance = configData.getLocationMinimumDistance();
+        mVersion = configData.getVersion();
     }
 
     public void clear() {
@@ -121,6 +127,7 @@ public class ConfigData implements Parcelable {
         mIsGPSEnabled = false;
         mLocationMinimumTime = DEFAULT_LOCATION_MINIMUM_TIME;
         mLocationMinimumDistance = DEFAULT_LOCATION_MINIMUM_DISTANCE;
+        mVersion = 0;
     }
 
     public String getWatchId() {
@@ -196,6 +203,15 @@ public class ConfigData implements Parcelable {
         mLocationMinimumTime = value;
     }
 
+    public int getVersion() { return mVersion; }
+    public void setVersion(int value) {
+        mVersion = value;
+    }
+
+    public boolean isNewVersion() {
+        return mVersion != DEFAULT_VERSION;
+    }
+
     public void assignDefaults(Context context) {
         setWatchId(getDefaultWatchId(context));
         setKeyname(DEFAULT_KEY_NAME);
@@ -207,6 +223,7 @@ public class ConfigData implements Parcelable {
         setGPSEnabled(DEFAULT_IS_GPS_ENABLED);
         setLocationMinimumTime(DEFAULT_LOCATION_MINIMUM_TIME);
         setLocationMinimumDistance(DEFAULT_LOCATION_MINIMUM_DISTANCE);
+        setVersion(DEFAULT_CURRENT_VERSION);
         saveToPreference(context, this);
     }
 
@@ -243,6 +260,7 @@ public class ConfigData implements Parcelable {
             mLocationMinimumDistance = DEFAULT_LOCATION_MINIMUM_DISTANCE;
             mLocationMinimumTime = DEFAULT_LOCATION_MINIMUM_TIME;
         }
+        mVersion = sharedPreferences.getInt(PREFERENCE_VERSION, 0);
     }
 
     public void wirteToPreference(SharedPreferences sharedPreferences) {
@@ -256,9 +274,9 @@ public class ConfigData implements Parcelable {
         editor.putString(PREFERENCE_HEART_RATE_FREQUENCY, String.valueOf(mHeartRateFrequency));
         editor.putBoolean(PREFERENCE_IS_GPS_ENABLED, mIsGPSEnabled);
         editor.putBoolean(PREFERENCE_IS_TRACKING_ENABLED, mIsTrackingEnabled);
-        editor.putLong(PREFERENCE_LOCATION_MINIMUM_TIME, mLocationMinimumTime);
-        editor.putLong(PREFERENCE_LOCATION_MINIMUM_DISTANCE, mLocationMinimumDistance);
-
+        editor.putString(PREFERENCE_LOCATION_MINIMUM_TIME, String.valueOf(mLocationMinimumTime));
+        editor.putString(PREFERENCE_LOCATION_MINIMUM_DISTANCE, String.valueOf(mLocationMinimumDistance));
+        editor.putInt(PREFERENCE_VERSION, DEFAULT_CURRENT_VERSION);
         editor.apply();
     }
 
@@ -294,6 +312,7 @@ public class ConfigData implements Parcelable {
         mIsGPSEnabled = in.readByte() != 0;
         mLocationMinimumTime = in.readLong();
         mLocationMinimumDistance = in.readLong();
+        mVersion = in.readInt();
     }
 
     public static final Creator<ConfigData> CREATOR = new Creator<ConfigData>() {
@@ -327,6 +346,7 @@ public class ConfigData implements Parcelable {
         dest.writeByte((byte) (mIsGPSEnabled ? 1: 0));
         dest.writeLong(mLocationMinimumTime);
         dest.writeLong(mLocationMinimumDistance);
+        dest.writeInt(mVersion);
     }
 
 }

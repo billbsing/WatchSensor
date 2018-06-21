@@ -2,7 +2,10 @@
 .gradle
 local.properties
 .DS_Store
+<<<<<<< HEAD
 build
+=======
+>>>>>>> fa4bdd4e3199daeac8bc6b3eafab7ef0884e00d7
 captures
 .externalNativeBuild
 
@@ -50,8 +53,11 @@ captures/
 .idea/modules.xml
 .idea/misc.xml
 .idea/caches
+<<<<<<< HEAD
 .idea/codeStyles
 
+=======
+>>>>>>> fa4bdd4e3199daeac8bc6b3eafab7ef0884e00d7
 
 
 # Keystore files
